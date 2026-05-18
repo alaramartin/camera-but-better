@@ -3,10 +3,17 @@ import SwiftUI
 
 @MainActor
 final class ControlsViewModel: ObservableObject {
-    @Published var iso: Double = 200
-    @Published var shutterIndex: Double = 5
-    @Published var focusPosition: Double = 0.5
-    @Published var whiteBalanceTemperature: Double = 5500
+    private enum Defaults {
+        static let iso: Double = 200
+        static let shutterIndex: Double = 5
+        static let focusPosition: Double = 0.5
+        static let whiteBalanceTemperature: Double = 5500
+    }
+
+    @Published var iso: Double = Defaults.iso
+    @Published var shutterIndex: Double = Defaults.shutterIndex
+    @Published var focusPosition: Double = Defaults.focusPosition
+    @Published var whiteBalanceTemperature: Double = Defaults.whiteBalanceTemperature
 
     let shutterSpeedStops: [CMTime] = [
         CMTimeMake(value: 1, timescale: 4000),
@@ -38,19 +45,18 @@ final class ControlsViewModel: ObservableObject {
         self.cameraManager = cameraManager
     }
 
-    func applyISO() {
-        cameraManager.setISO(Float(iso))
-    }
+    // MARK: - Apply
 
-    func applyShutterSpeed() {
-        cameraManager.setShutterSpeed(shutterSpeedStops[Int(shutterIndex.rounded())])
-    }
+    func applyISO() { cameraManager.setISO(Float(iso)) }
+    func applyShutterSpeed() { cameraManager.setShutterSpeed(shutterSpeedStops[Int(shutterIndex.rounded())]) }
+    func applyFocus() { cameraManager.setFocus(Float(focusPosition)) }
+    func applyWhiteBalance() { cameraManager.setWhiteBalance(Float(whiteBalanceTemperature)) }
 
-    func applyFocus() {
-        cameraManager.setFocus(Float(focusPosition))
-    }
+    // MARK: - Reset
 
-    func applyWhiteBalance() {
-        cameraManager.setWhiteBalance(Float(whiteBalanceTemperature))
-    }
+    func resetISO() { iso = Defaults.iso; applyISO() }
+    func resetShutterSpeed() { shutterIndex = Defaults.shutterIndex; applyShutterSpeed() }
+    func resetFocus() { focusPosition = Defaults.focusPosition; applyFocus() }
+    func resetWhiteBalance() { whiteBalanceTemperature = Defaults.whiteBalanceTemperature; applyWhiteBalance() }
+    func resetAll() { resetISO(); resetShutterSpeed(); resetFocus(); resetWhiteBalance() }
 }

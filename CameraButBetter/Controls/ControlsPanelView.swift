@@ -10,7 +10,8 @@ struct ControlsPanelView: View {
                 valueLabel: viewModel.isoLabel,
                 value: $viewModel.iso,
                 range: Constants.Camera.isoMin...Constants.Camera.isoMax,
-                onChange: viewModel.applyISO
+                onChange: viewModel.applyISO,
+                onReset: viewModel.resetISO
             )
             ControlSliderView(
                 label: "Shutter",
@@ -18,25 +19,26 @@ struct ControlsPanelView: View {
                 value: $viewModel.shutterIndex,
                 range: viewModel.shutterIndexRange,
                 step: 1,
-                onChange: viewModel.applyShutterSpeed
+                onChange: viewModel.applyShutterSpeed,
+                onReset: viewModel.resetShutterSpeed
             )
             ControlSliderView(
                 label: "Focus",
                 valueLabel: viewModel.focusLabel,
                 value: $viewModel.focusPosition,
                 range: 0...1,
-                onChange: viewModel.applyFocus
+                onChange: viewModel.applyFocus,
+                onReset: viewModel.resetFocus
             )
             ControlSliderView(
                 label: "WB",
                 valueLabel: viewModel.whiteBalanceLabel,
                 value: $viewModel.whiteBalanceTemperature,
                 range: Double(Constants.Camera.colorTemperatureMin)...Double(Constants.Camera.colorTemperatureMax),
-                onChange: viewModel.applyWhiteBalance
+                onChange: viewModel.applyWhiteBalance,
+                onReset: viewModel.resetWhiteBalance
             )
         }
-        .padding(.vertical, 16)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .padding(.vertical, 14)
     }
 }

@@ -17,18 +17,13 @@ struct ContentView: View {
                 .ignoresSafeArea()
 
             VStack {
-                topBar
-                Spacer()
-            }
-
-            HStack {
-                Spacer()
-                if showControls {
-                    ControlsPanelView(viewModel: controlsViewModel)
-                        .frame(width: 230)
-                        .padding(.trailing, 10)
-                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                HStack {
+                    Spacer()
+                    controlsContainer
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                Spacer()
             }
 
             VStack {
@@ -53,26 +48,52 @@ struct ContentView: View {
         } message: {
             Text(captureError ?? "An error occurred.")
         }
-        .animation(.easeInOut(duration: 0.25), value: showControls)
     }
 
-    private var topBar: some View {
-        HStack {
-            Spacer()
-            Button {
-                withAnimation { showControls.toggle() }
-            } label: {
-                Image(systemName: "slider.horizontal.3")
-                    .font(.title2)
-                    .foregroundStyle(.white)
-                    .padding(10)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Circle())
+    // MARK: - Controls container (morphs between button and panel)
+
+    private var controlsContainer: some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            HStack(spacing: 10) {
+                if showControls {
+                    Button("Reset All", action: controlsViewModel.resetAll)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .transition(.opacity)
+                }
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                        showControls.toggle()
+                    }
+                } label: {
+                    Image(systemName: showControls ? "xmark" : "slider.horizontal.3")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(.white)
+                        .frame(width: 22, height: 22)
+                        .contentTransition(.symbolEffect(.replace))
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+
+            if showControls {
+                Rectangle()
+                    .fill(.white.opacity(0.15))
+                    .frame(height: 0.5)
+                    .padding(.horizontal, 12)
+                    .transition(.opacity)
+
+                ControlsPanelView(viewModel: controlsViewModel)
+                    .transition(.opacity)
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 16)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: showControls ? 16 : .infinity))
+        .frame(width: showControls ? 250 : nil)
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: showControls)
     }
+
+    // MARK: - Capture button
 
     private var captureButton: some View {
         Button(action: capturePhoto) {
@@ -87,6 +108,8 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Error banner
+
     @ViewBuilder
     private func errorBanner(_ message: String) -> some View {
         Text(message)
@@ -98,6 +121,8 @@ struct ContentView: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .padding(.horizontal, 20)
     }
+
+    // MARK: - Photo capture
 
     private func capturePhoto() {
         let delegate = PhotoCaptureDelegate { result in
