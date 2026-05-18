@@ -17,6 +17,9 @@
 		AA0000000000000000000025 /* ControlSliderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000001B /* ControlSliderView.swift */; };
 		AA0000000000000000000026 /* ControlsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000001C /* ControlsViewModel.swift */; };
 		AA0000000000000000000027 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000001D /* Constants.swift */; };
+		AA000000000000000000002D /* SessionGalleryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000002A /* SessionGalleryViewModel.swift */; };
+		AA000000000000000000002E /* SessionGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000002B /* SessionGalleryView.swift */; };
+		AA000000000000000000002F /* PhotoDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000002C /* PhotoDetailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +35,9 @@
 		AA000000000000000000001B /* ControlSliderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlSliderView.swift; sourceTree = "<group>"; };
 		AA000000000000000000001C /* ControlsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlsViewModel.swift; sourceTree = "<group>"; };
 		AA000000000000000000001D /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		AA000000000000000000002A /* SessionGalleryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionGalleryViewModel.swift; sourceTree = "<group>"; };
+		AA000000000000000000002B /* SessionGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionGalleryView.swift; sourceTree = "<group>"; };
+		AA000000000000000000002C /* PhotoDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoDetailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -51,10 +57,21 @@
 				AA000000000000000000000F /* App */,
 				AA0000000000000000000010 /* Camera */,
 				AA0000000000000000000011 /* Controls */,
+				AA0000000000000000000029 /* Gallery */,
 				AA0000000000000000000012 /* Utilities */,
 				AA0000000000000000000013 /* Info.plist */,
 			);
 			path = CameraButBetter;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000029 /* Gallery */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000000000002A /* SessionGalleryViewModel.swift */,
+				AA000000000000000000002B /* SessionGalleryView.swift */,
+				AA000000000000000000002C /* PhotoDetailView.swift */,
+			);
+			path = Gallery;
 			sourceTree = "<group>";
 		};
 		AA0000000000000000000003 /* Products */ = {
@@ -189,6 +206,9 @@
 				AA0000000000000000000025 /* ControlSliderView.swift in Sources */,
 				AA0000000000000000000026 /* ControlsViewModel.swift in Sources */,
 				AA0000000000000000000027 /* Constants.swift in Sources */,
+				AA000000000000000000002D /* SessionGalleryViewModel.swift in Sources */,
+				AA000000000000000000002E /* SessionGalleryView.swift in Sources */,
+				AA000000000000000000002F /* PhotoDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

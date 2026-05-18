@@ -4,6 +4,7 @@ import SwiftUI
 struct CameraButBetterApp: App {
     @StateObject private var cameraManager: CameraManager
     @StateObject private var controlsViewModel: ControlsViewModel
+    @StateObject private var sessionGalleryViewModel = SessionGalleryViewModel()
 
     init() {
         let manager = CameraManager()
@@ -16,6 +17,7 @@ struct CameraButBetterApp: App {
             ContentView()
                 .environmentObject(cameraManager)
                 .environmentObject(controlsViewModel)
+                .environmentObject(sessionGalleryViewModel)
         }
     }
 }

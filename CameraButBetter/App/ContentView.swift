@@ -3,8 +3,10 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var cameraManager: CameraManager
     @EnvironmentObject private var controlsViewModel: ControlsViewModel
+    @EnvironmentObject private var sessionGalleryViewModel: SessionGalleryViewModel
 
     @State private var showControls = false
+    @State private var showGallery = false
     @State private var captureError: String?
     @State private var showCaptureError = false
     @State private var activePhotoDelegate: PhotoCaptureDelegate?
@@ -32,6 +34,16 @@ struct ContentView: View {
                     .padding(.bottom, 40)
             }
 
+            VStack {
+                Spacer()
+                HStack {
+                    galleryButton
+                        .padding(.leading, 28)
+                    Spacer()
+                }
+                .padding(.bottom, 50)
+            }
+
             if let message = cameraManager.error {
                 VStack {
                     Spacer()
@@ -47,6 +59,9 @@ struct ContentView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(captureError ?? "An error occurred.")
+        }
+        .sheet(isPresented: $showGallery) {
+            SessionGalleryView(viewModel: sessionGalleryViewModel)
         }
     }
 
@@ -108,6 +123,29 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Gallery button
+
+    private var galleryButton: some View {
+        Button { showGallery = true } label: {
+            if let last = sessionGalleryViewModel.sessionPhotos.last {
+                Image(uiImage: last)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 52, height: 52)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(.white.opacity(0.5), lineWidth: 1)
+                    )
+            } else {
+                Image(systemName: "photo.on.rectangle")
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundStyle(.white)
+                    .frame(width: 52, height: 52)
+            }
+        }
+    }
+
     // MARK: - Error banner
 
     @ViewBuilder
@@ -126,8 +164,11 @@ struct ContentView: View {
 
     private func capturePhoto() {
         let delegate = PhotoCaptureDelegate { result in
-            if case .failure(let error) = result {
-                DispatchQueue.main.async {
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let thumbnail):
+                    sessionGalleryViewModel.add(thumbnail)
+                case .failure(let error):
                     self.captureError = error.localizedDescription
                     self.showCaptureError = true
                 }

@@ -1,10 +1,12 @@
 import AVFoundation
+import ImageIO
 import Photos
+import UIKit
 
 final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
-    private let completion: (Result<Void, Error>) -> Void
+    private let completion: (Result<UIImage, Error>) -> Void
 
-    init(completion: @escaping (Result<Void, Error>) -> Void) {
+    init(completion: @escaping (Result<UIImage, Error>) -> Void) {
         self.completion = completion
     }
 
@@ -17,6 +19,7 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
             completion(.failure(CaptureError.noData))
             return
         }
+        let thumbnail = Self.thumbnail(from: data)
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
             guard status == .authorized || status == .limited else {
                 self.completion(.failure(CaptureError.photoLibraryDenied))
@@ -28,11 +31,25 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
             } completionHandler: { _, saveError in
                 if let saveError {
                     self.completion(.failure(saveError))
+                } else if let thumbnail {
+                    self.completion(.success(thumbnail))
                 } else {
-                    self.completion(.success(()))
+                    self.completion(.failure(CaptureError.noData))
                 }
             }
         }
+    }
+
+    private static func thumbnail(from data: Data) -> UIImage? {
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: 1200,
+            kCGImageSourceCreateThumbnailWithTransform: true
+        ]
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
+        else { return UIImage(data: data) }
+        return UIImage(cgImage: cgImage)
     }
 
     enum CaptureError: LocalizedError {
