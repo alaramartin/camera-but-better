@@ -9,7 +9,9 @@ final class CameraManager: NSObject, ObservableObject {
     private var device: AVCaptureDevice?
     private let photoOutput = AVCapturePhotoOutput()
     let videoOutput = AVCaptureVideoDataOutput()
+    let frameDelegate = FrameOutputDelegate()
     private let sessionQueue = DispatchQueue(label: "com.alaramartin.CameraButBetter.session", qos: .userInitiated)
+    private let videoOutputQueue = DispatchQueue(label: "com.alaramartin.CameraButBetter.video", qos: .userInitiated)
 
     override init() {
         super.init()
@@ -42,7 +44,12 @@ final class CameraManager: NSObject, ObservableObject {
             let input = try AVCaptureDeviceInput(device: device)
             if session.canAddInput(input) { session.addInput(input) }
             if session.canAddOutput(photoOutput) { session.addOutput(photoOutput) }
-            if session.canAddOutput(videoOutput) { session.addOutput(videoOutput) }
+            if session.canAddOutput(videoOutput) {
+                videoOutput.alwaysDiscardsLateVideoFrames = true
+                videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
+                videoOutput.setSampleBufferDelegate(frameDelegate, queue: videoOutputQueue)
+                session.addOutput(videoOutput)
+            }
         } catch {
             DispatchQueue.main.async { self.error = error.localizedDescription }
             session.commitConfiguration()
@@ -114,6 +121,53 @@ final class CameraManager: NSObject, ObservableObject {
                 let gains = device.deviceWhiteBalanceGains(for: temperatureAndTint)
                 let clamped = self.clampGains(gains, for: device)
                 device.setWhiteBalanceModeLocked(with: clamped, completionHandler: nil)
+                device.unlockForConfiguration()
+            } catch {
+                DispatchQueue.main.async { self.error = error.localizedDescription }
+            }
+        }
+    }
+
+    // MARK: - Auto Reset
+
+    func resetExposureToAuto() {
+        guard let device else { return }
+        sessionQueue.async {
+            do {
+                try device.lockForConfiguration()
+                if device.isExposureModeSupported(.continuousAutoExposure) {
+                    device.exposureMode = .continuousAutoExposure
+                }
+                device.unlockForConfiguration()
+            } catch {
+                DispatchQueue.main.async { self.error = error.localizedDescription }
+            }
+        }
+    }
+
+    func resetFocusToAuto() {
+        guard let device else { return }
+        sessionQueue.async {
+            do {
+                try device.lockForConfiguration()
+                if device.isFocusModeSupported(.continuousAutoFocus) {
+                    device.focusMode = .continuousAutoFocus
+                }
+                device.unlockForConfiguration()
+            } catch {
+                DispatchQueue.main.async { self.error = error.localizedDescription }
+            }
+        }
+    }
+
+    func resetWhiteBalanceToAuto() {
+        guard let device else { return }
+        sessionQueue.async {
+            do {
+                try device.lockForConfiguration()
+                if device.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+                    device.whiteBalanceMode = .continuousAutoWhiteBalance
+                }
                 device.unlockForConfiguration()
             } catch {
                 DispatchQueue.main.async { self.error = error.localizedDescription }

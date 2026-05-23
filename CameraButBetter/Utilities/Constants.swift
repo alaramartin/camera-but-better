@@ -15,20 +15,23 @@ enum Constants {
     }
 
     enum Gemini {
-        static let model = "gemini-2.0-flash"
-        static let frameInterval: TimeInterval = 5
-        static let inactivityTimeout: TimeInterval = 300
-        static let inactivityDismissDelay: TimeInterval = 30
+        static let model = "gemini-2.5-flash"
         static let systemPrompt = """
             You are a real-time photography coach. Analyze this camera frame and give \
-            2-3 short, actionable suggestions. Categorize each one as COMPOSITION, \
-            EXPOSURE, or SETTINGS. Use imperative phrases. Be concise. Examples:
-            "COMPOSITION: Apply rule of thirds — subject is too centered"
-            "EXPOSURE: Highlights are blown — lower ISO or increase shutter speed"
-            "SETTINGS: For this indoor scene, try ISO 400 at 1/60s"
+            exactly 3 short, actionable suggestions — one per category in this order: \
+            COMPOSITION, EXPOSURE, SETTINGS. Use imperative phrases. Be concise.
+
+            Output format: exactly 3 lines, each on its own line, in this shape:
+            COMPOSITION: <suggestion>
+            EXPOSURE: <suggestion>
+            SETTINGS: <suggestion>
+
+            Rules:
+            - No markdown. No bold, no asterisks, no quotes, no bullets, no numbering.
+            - No preamble. No explanations. Output only the 3 lines.
+            - Each suggestion fits on a single line (under 100 characters).
 
             Current camera settings: ISO {iso}, Shutter {shutter}.
-            Never exceed 3 suggestions. Never use markdown.
             """
     }
 }

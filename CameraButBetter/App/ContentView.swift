@@ -4,9 +4,12 @@ struct ContentView: View {
     @EnvironmentObject private var cameraManager: CameraManager
     @EnvironmentObject private var controlsViewModel: ControlsViewModel
     @EnvironmentObject private var sessionGalleryViewModel: SessionGalleryViewModel
+    @EnvironmentObject private var feedbackViewModel: FeedbackViewModel
+    @EnvironmentObject private var feedbackScheduler: FeedbackScheduler
 
     @State private var showControls = false
     @State private var showGallery = false
+    @State private var showSettings = false
     @State private var captureError: String?
     @State private var showCaptureError = false
     @State private var activePhotoDelegate: PhotoCaptureDelegate?
@@ -19,12 +22,23 @@ struct ContentView: View {
                 .ignoresSafeArea()
 
             VStack {
-                HStack {
+                HStack(alignment: .top) {
+                    topBarLeading
                     Spacer()
                     controlsContainer
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
+
+                if shouldShowOverlay {
+                    HStack {
+                        FeedbackOverlayView(viewModel: feedbackViewModel, scheduler: feedbackScheduler)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
+                        Spacer()
+                    }
+                }
+
                 Spacer()
             }
 
@@ -40,6 +54,8 @@ struct ContentView: View {
                     galleryButton
                         .padding(.leading, 28)
                     Spacer()
+                    feedbackButton
+                        .padding(.trailing, 28)
                 }
                 .padding(.bottom, 50)
             }
@@ -63,6 +79,27 @@ struct ContentView: View {
         .sheet(isPresented: $showGallery) {
             SessionGalleryView(viewModel: sessionGalleryViewModel)
         }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+        }
+    }
+
+    // MARK: - Top bar leading (settings)
+
+    private var topBarLeading: some View {
+        Button { showSettings = true } label: {
+            Image(systemName: "gearshape")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(.white)
+                .frame(width: 36, height: 36)
+                .background(.ultraThinMaterial, in: Circle())
+        }
+    }
+
+    private var shouldShowOverlay: Bool {
+        feedbackScheduler.isAnalyzing
+            || feedbackViewModel.current != nil
+            || feedbackViewModel.lastError != nil
     }
 
     // MARK: - Controls container (morphs between button and panel)
@@ -71,10 +108,12 @@ struct ContentView: View {
         VStack(alignment: .trailing, spacing: 0) {
             HStack(spacing: 10) {
                 if showControls {
-                    Button("Reset All", action: controlsViewModel.resetAll)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.7))
-                        .transition(.opacity)
+                    Button("Reset All") {
+                        controlsViewModel.resetAll()
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .transition(.opacity)
                 }
                 Button {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
@@ -121,6 +160,32 @@ struct ContentView: View {
                     .frame(width: 60, height: 60)
             }
         }
+    }
+
+    // MARK: - Feedback button
+
+    private var feedbackButton: some View {
+        Button {
+            feedbackScheduler.requestFeedback()
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(.ultraThinMaterial)
+                    .frame(width: 52, height: 52)
+                Circle()
+                    .strokeBorder(.white.opacity(0.5), lineWidth: 1)
+                    .frame(width: 52, height: 52)
+                if feedbackScheduler.isAnalyzing {
+                    ProgressView().tint(.white)
+                } else {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+            }
+        }
+        .disabled(feedbackScheduler.isAnalyzing)
+        .accessibilityLabel("Get AI feedback on current frame")
     }
 
     // MARK: - Gallery button

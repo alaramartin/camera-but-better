@@ -52,11 +52,37 @@ final class ControlsViewModel: ObservableObject {
     func applyFocus() { cameraManager.setFocus(Float(focusPosition)) }
     func applyWhiteBalance() { cameraManager.setWhiteBalance(Float(whiteBalanceTemperature)) }
 
-    // MARK: - Reset
+    // MARK: - Reset (restores continuous-auto on the device, snaps sliders to defaults visually)
 
-    func resetISO() { iso = Defaults.iso; applyISO() }
-    func resetShutterSpeed() { shutterIndex = Defaults.shutterIndex; applyShutterSpeed() }
-    func resetFocus() { focusPosition = Defaults.focusPosition; applyFocus() }
-    func resetWhiteBalance() { whiteBalanceTemperature = Defaults.whiteBalanceTemperature; applyWhiteBalance() }
-    func resetAll() { resetISO(); resetShutterSpeed(); resetFocus(); resetWhiteBalance() }
+    func resetISO() {
+        iso = Defaults.iso
+        shutterIndex = Defaults.shutterIndex
+        cameraManager.resetExposureToAuto()
+    }
+
+    func resetShutterSpeed() {
+        shutterIndex = Defaults.shutterIndex
+        iso = Defaults.iso
+        cameraManager.resetExposureToAuto()
+    }
+
+    func resetFocus() {
+        focusPosition = Defaults.focusPosition
+        cameraManager.resetFocusToAuto()
+    }
+
+    func resetWhiteBalance() {
+        whiteBalanceTemperature = Defaults.whiteBalanceTemperature
+        cameraManager.resetWhiteBalanceToAuto()
+    }
+
+    func resetAll() {
+        iso = Defaults.iso
+        shutterIndex = Defaults.shutterIndex
+        focusPosition = Defaults.focusPosition
+        whiteBalanceTemperature = Defaults.whiteBalanceTemperature
+        cameraManager.resetExposureToAuto()
+        cameraManager.resetFocusToAuto()
+        cameraManager.resetWhiteBalanceToAuto()
+    }
 }

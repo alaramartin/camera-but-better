@@ -20,6 +20,14 @@
 		AA000000000000000000002D /* SessionGalleryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000002A /* SessionGalleryViewModel.swift */; };
 		AA000000000000000000002E /* SessionGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000002B /* SessionGalleryView.swift */; };
 		AA000000000000000000002F /* PhotoDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000002C /* PhotoDetailView.swift */; };
+		AA0000000000000000000041 /* FeedbackModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000031 /* FeedbackModels.swift */; };
+		AA0000000000000000000042 /* GeminiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000032 /* GeminiService.swift */; };
+		AA0000000000000000000043 /* FeedbackScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000033 /* FeedbackScheduler.swift */; };
+		AA0000000000000000000044 /* FeedbackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000034 /* FeedbackViewModel.swift */; };
+		AA0000000000000000000045 /* FeedbackOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000035 /* FeedbackOverlayView.swift */; };
+		AA0000000000000000000046 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000036 /* KeychainService.swift */; };
+		AA0000000000000000000047 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000037 /* SettingsView.swift */; };
+		AA0000000000000000000048 /* ImageConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000038 /* ImageConverter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,6 +46,14 @@
 		AA000000000000000000002A /* SessionGalleryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionGalleryViewModel.swift; sourceTree = "<group>"; };
 		AA000000000000000000002B /* SessionGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionGalleryView.swift; sourceTree = "<group>"; };
 		AA000000000000000000002C /* PhotoDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoDetailView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000031 /* FeedbackModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackModels.swift; sourceTree = "<group>"; };
+		AA0000000000000000000032 /* GeminiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiService.swift; sourceTree = "<group>"; };
+		AA0000000000000000000033 /* FeedbackScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackScheduler.swift; sourceTree = "<group>"; };
+		AA0000000000000000000034 /* FeedbackViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackViewModel.swift; sourceTree = "<group>"; };
+		AA0000000000000000000035 /* FeedbackOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackOverlayView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000036 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		AA0000000000000000000037 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000038 /* ImageConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageConverter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,10 +74,41 @@
 				AA0000000000000000000010 /* Camera */,
 				AA0000000000000000000011 /* Controls */,
 				AA0000000000000000000029 /* Gallery */,
+				AA0000000000000000000039 /* AI */,
+				AA000000000000000000003A /* Feedback */,
+				AA000000000000000000003B /* Settings */,
 				AA0000000000000000000012 /* Utilities */,
 				AA0000000000000000000013 /* Info.plist */,
 			);
 			path = CameraButBetter;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000039 /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000031 /* FeedbackModels.swift */,
+				AA0000000000000000000032 /* GeminiService.swift */,
+				AA0000000000000000000033 /* FeedbackScheduler.swift */,
+			);
+			path = AI;
+			sourceTree = "<group>";
+		};
+		AA000000000000000000003A /* Feedback */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000034 /* FeedbackViewModel.swift */,
+				AA0000000000000000000035 /* FeedbackOverlayView.swift */,
+			);
+			path = Feedback;
+			sourceTree = "<group>";
+		};
+		AA000000000000000000003B /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000036 /* KeychainService.swift */,
+				AA0000000000000000000037 /* SettingsView.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		AA0000000000000000000029 /* Gallery */ = {
@@ -116,6 +163,7 @@
 			isa = PBXGroup;
 			children = (
 				AA000000000000000000001D /* Constants.swift */,
+				AA0000000000000000000038 /* ImageConverter.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -209,6 +257,14 @@
 				AA000000000000000000002D /* SessionGalleryViewModel.swift in Sources */,
 				AA000000000000000000002E /* SessionGalleryView.swift in Sources */,
 				AA000000000000000000002F /* PhotoDetailView.swift in Sources */,
+				AA0000000000000000000041 /* FeedbackModels.swift in Sources */,
+				AA0000000000000000000042 /* GeminiService.swift in Sources */,
+				AA0000000000000000000043 /* FeedbackScheduler.swift in Sources */,
+				AA0000000000000000000044 /* FeedbackViewModel.swift in Sources */,
+				AA0000000000000000000045 /* FeedbackOverlayView.swift in Sources */,
+				AA0000000000000000000046 /* KeychainService.swift in Sources */,
+				AA0000000000000000000047 /* SettingsView.swift in Sources */,
+				AA0000000000000000000048 /* ImageConverter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
