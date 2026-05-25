@@ -28,6 +28,9 @@
 		AA0000000000000000000046 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000036 /* KeychainService.swift */; };
 		AA0000000000000000000047 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000037 /* SettingsView.swift */; };
 		AA0000000000000000000048 /* ImageConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000038 /* ImageConverter.swift */; };
+		AA0000000000000000000049 /* OverlaySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000004C /* OverlaySettings.swift */; };
+		AA000000000000000000004A /* MotionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000004D /* MotionManager.swift */; };
+		AA000000000000000000004B /* CameraOverlaysView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000004E /* CameraOverlaysView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -54,6 +57,9 @@
 		AA0000000000000000000036 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		AA0000000000000000000037 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000038 /* ImageConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageConverter.swift; sourceTree = "<group>"; };
+		AA000000000000000000004C /* OverlaySettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlaySettings.swift; sourceTree = "<group>"; };
+		AA000000000000000000004D /* MotionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionManager.swift; sourceTree = "<group>"; };
+		AA000000000000000000004E /* CameraOverlaysView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOverlaysView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -145,6 +151,8 @@
 				AA0000000000000000000017 /* CameraPreviewView.swift */,
 				AA0000000000000000000018 /* PhotoCaptureDelegate.swift */,
 				AA0000000000000000000019 /* FrameOutputDelegate.swift */,
+				AA000000000000000000004D /* MotionManager.swift */,
+				AA000000000000000000004E /* CameraOverlaysView.swift */,
 			);
 			path = Camera;
 			sourceTree = "<group>";
@@ -164,6 +172,7 @@
 			children = (
 				AA000000000000000000001D /* Constants.swift */,
 				AA0000000000000000000038 /* ImageConverter.swift */,
+				AA000000000000000000004C /* OverlaySettings.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -265,6 +274,9 @@
 				AA0000000000000000000046 /* KeychainService.swift in Sources */,
 				AA0000000000000000000047 /* SettingsView.swift in Sources */,
 				AA0000000000000000000048 /* ImageConverter.swift in Sources */,
+				AA0000000000000000000049 /* OverlaySettings.swift in Sources */,
+				AA000000000000000000004A /* MotionManager.swift in Sources */,
+				AA000000000000000000004B /* CameraOverlaysView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

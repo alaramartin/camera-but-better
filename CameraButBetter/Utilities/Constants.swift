@@ -14,6 +14,16 @@ enum Constants {
         static let settingsColor = Color(hex: "7ED957")
     }
 
+    enum Overlay {
+        static let levelAlignedThresholdDegrees: Double = 1.0
+        static let levelLineLength: CGFloat = 90
+        static let lineWidth: CGFloat = 0.75
+        static let gridLineColor = Color.white.opacity(0.5)
+        static let centerCrossLength: CGFloat = 14
+        static let alignedColor = Color.green
+        static let unalignedColor = Color.white
+    }
+
     enum Gemini {
         static let model = "gemini-2.5-flash"
         static let systemPrompt = """

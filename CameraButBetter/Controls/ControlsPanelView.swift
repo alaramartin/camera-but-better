@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ControlsPanelView: View {
     @ObservedObject var viewModel: ControlsViewModel
+    @EnvironmentObject private var overlaySettings: OverlaySettings
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -38,7 +39,26 @@ struct ControlsPanelView: View {
                 onChange: viewModel.applyWhiteBalance,
                 onReset: viewModel.resetWhiteBalance
             )
+
+            Rectangle()
+                .fill(.white.opacity(0.15))
+                .frame(height: 0.5)
+                .padding(.horizontal, 12)
+
+            overlayToggle("Level", isOn: $overlaySettings.showLevel)
+            overlayToggle("Grid", isOn: $overlaySettings.showGrid)
+            overlayToggle("Center", isOn: $overlaySettings.showCenterCross)
         }
         .padding(.vertical, 14)
+    }
+
+    private func overlayToggle(_ label: String, isOn: Binding<Bool>) -> some View {
+        Toggle(isOn: isOn) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.white)
+                .frame(width: 46, alignment: .leading)
+        }
+        .padding(.horizontal, 12)
     }
 }

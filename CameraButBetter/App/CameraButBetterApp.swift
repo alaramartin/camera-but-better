@@ -7,6 +7,8 @@ struct CameraButBetterApp: App {
     @StateObject private var sessionGalleryViewModel = SessionGalleryViewModel()
     @StateObject private var feedbackViewModel: FeedbackViewModel
     @StateObject private var feedbackScheduler: FeedbackScheduler
+    @StateObject private var overlaySettings = OverlaySettings()
+    @StateObject private var motionManager = MotionManager()
 
     init() {
         let manager = CameraManager()
@@ -31,6 +33,8 @@ struct CameraButBetterApp: App {
                 .environmentObject(sessionGalleryViewModel)
                 .environmentObject(feedbackViewModel)
                 .environmentObject(feedbackScheduler)
+                .environmentObject(overlaySettings)
+                .environmentObject(motionManager)
         }
     }
 }

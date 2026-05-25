@@ -6,6 +6,8 @@ struct ContentView: View {
     @EnvironmentObject private var sessionGalleryViewModel: SessionGalleryViewModel
     @EnvironmentObject private var feedbackViewModel: FeedbackViewModel
     @EnvironmentObject private var feedbackScheduler: FeedbackScheduler
+    @EnvironmentObject private var overlaySettings: OverlaySettings
+    @EnvironmentObject private var motionManager: MotionManager
 
     @State private var showControls = false
     @State private var showGallery = false
@@ -20,6 +22,8 @@ struct ContentView: View {
 
             CameraPreviewView(session: cameraManager.session)
                 .ignoresSafeArea()
+
+            overlayLayer
 
             VStack {
                 HStack(alignment: .top) {
@@ -70,6 +74,11 @@ struct ContentView: View {
         }
         .onAppear {
             cameraManager.requestPermissionAndStart()
+            if overlaySettings.showLevel { motionManager.start() }
+        }
+        .onDisappear { motionManager.stop() }
+        .onChange(of: overlaySettings.showLevel) { _, enabled in
+            if enabled { motionManager.start() } else { motionManager.stop() }
         }
         .alert("Capture Failed", isPresented: $showCaptureError) {
             Button("OK", role: .cancel) {}
@@ -82,6 +91,24 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
+    }
+
+    // MARK: - Composition overlays (grid, center cross, level)
+
+    private var overlayLayer: some View {
+        ZStack {
+            if overlaySettings.showGrid {
+                GridOverlayView()
+            }
+            if overlaySettings.showLevel {
+                LevelOverlayView(tiltDegrees: motionManager.tiltDegrees)
+            }
+            if overlaySettings.showCenterCross {
+                CenterCrossView()
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
     }
 
     // MARK: - Top bar leading (settings)
