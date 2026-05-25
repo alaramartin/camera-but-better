@@ -4,7 +4,7 @@ import SwiftUI
 final class FeedbackViewModel: ObservableObject {
     @Published private(set) var current: FeedbackResult?
     @Published private(set) var history: [FeedbackResult] = []
-    @Published var lastError: String?
+    @Published var errorState: FeedbackErrorState?
 
     private let maxHistory = 20
 
@@ -14,19 +14,19 @@ final class FeedbackViewModel: ObservableObject {
         if history.count > maxHistory {
             history.removeFirst(history.count - maxHistory)
         }
-        lastError = nil
+        errorState = nil
     }
 
-    func record(error: Error) {
-        lastError = error.localizedDescription
+    func record(errorState: FeedbackErrorState) {
+        self.errorState = errorState
     }
 
     func clear() {
         current = nil
-        lastError = nil
+        errorState = nil
     }
 
     func dismissError() {
-        lastError = nil
+        errorState = nil
     }
 }

@@ -26,12 +26,44 @@ struct FeedbackResult: Identifiable, Hashable {
     let timestamp: Date
 }
 
+enum FeedbackFailureKind {
+    case client
+    case userDailyLimit
+    case transient
+}
+
+struct FeedbackErrorState {
+    let message: String
+    let canRetryGemma: Bool
+    let canSwitchToGemini: Bool
+}
+
 enum FeedbackError: LocalizedError {
     case missingAPIKey
     case invalidResponse
     case httpStatus(Int, String?)
     case emptyText
     case requestFailed(String)
+
+    var failureKind: FeedbackFailureKind {
+        switch self {
+        case .missingAPIKey:
+            return .client
+        case .httpStatus(let code, let body):
+            switch code {
+            case 429 where OpenRouterErrorBody.isDailyLimit(body):
+                return .userDailyLimit
+            case 429, 500...599:
+                return .transient
+            case 400, 401, 403:
+                return .client
+            default:
+                return .transient
+            }
+        case .invalidResponse, .emptyText, .requestFailed:
+            return .transient
+        }
+    }
 
     var errorDescription: String? {
         switch self {

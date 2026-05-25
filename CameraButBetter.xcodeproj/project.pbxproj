@@ -22,6 +22,7 @@
 		AA000000000000000000002F /* PhotoDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000002C /* PhotoDetailView.swift */; };
 		AA0000000000000000000041 /* FeedbackModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000031 /* FeedbackModels.swift */; };
 		AA0000000000000000000042 /* OpenRouterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000032 /* OpenRouterService.swift */; };
+		AA0000000000000000000053 /* GeminiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000052 /* GeminiService.swift */; };
 		AA0000000000000000000051 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000050 /* Config.swift */; };
 		AA0000000000000000000043 /* FeedbackScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000033 /* FeedbackScheduler.swift */; };
 		AA0000000000000000000044 /* FeedbackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000034 /* FeedbackViewModel.swift */; };
@@ -51,6 +52,7 @@
 		AA000000000000000000002C /* PhotoDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoDetailView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000031 /* FeedbackModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackModels.swift; sourceTree = "<group>"; };
 		AA0000000000000000000032 /* OpenRouterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenRouterService.swift; sourceTree = "<group>"; };
+		AA0000000000000000000052 /* GeminiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiService.swift; sourceTree = "<group>"; };
 		AA0000000000000000000050 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		AA0000000000000000000033 /* FeedbackScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackScheduler.swift; sourceTree = "<group>"; };
 		AA0000000000000000000034 /* FeedbackViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackViewModel.swift; sourceTree = "<group>"; };
@@ -94,6 +96,7 @@
 			children = (
 				AA0000000000000000000031 /* FeedbackModels.swift */,
 				AA0000000000000000000032 /* OpenRouterService.swift */,
+				AA0000000000000000000052 /* GeminiService.swift */,
 				AA0000000000000000000033 /* FeedbackScheduler.swift */,
 			);
 			path = AI;
@@ -268,6 +271,7 @@
 				AA000000000000000000002F /* PhotoDetailView.swift in Sources */,
 				AA0000000000000000000041 /* FeedbackModels.swift in Sources */,
 				AA0000000000000000000042 /* OpenRouterService.swift in Sources */,
+				AA0000000000000000000053 /* GeminiService.swift in Sources */,
 				AA0000000000000000000051 /* Config.swift in Sources */,
 				AA0000000000000000000043 /* FeedbackScheduler.swift in Sources */,
 				AA0000000000000000000044 /* FeedbackViewModel.swift in Sources */,

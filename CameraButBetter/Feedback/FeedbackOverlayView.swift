@@ -110,12 +110,51 @@ struct FeedbackOverlayView: View {
             ForEach(result.suggestions) { suggestion in
                 suggestionRow(suggestion)
             }
-        } else if let message = viewModel.lastError {
-            Text(message)
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.85))
-                .fixedSize(horizontal: false, vertical: true)
+        } else if let errorState = viewModel.errorState {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(errorState.message)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.85))
+                    .fixedSize(horizontal: false, vertical: true)
+                errorActions(errorState)
+            }
         }
+    }
+
+    private func errorActions(_ state: FeedbackErrorState) -> some View {
+        HStack(spacing: 8) {
+            if state.canRetryGemma {
+                actionButton("Retry") { scheduler.retryGemma() }
+            }
+            if state.canSwitchToGemini {
+                actionButton("Switch to Gemini") { scheduler.switchToGemini() }
+            }
+            Button {
+                scheduler.clear()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(.red.opacity(0.15), in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Cancel")
+        }
+    }
+
+    private func actionButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(.white.opacity(0.15), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(scheduler.isAnalyzing)
     }
 
     private var header: some View {

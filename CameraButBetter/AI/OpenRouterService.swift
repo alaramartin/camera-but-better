@@ -11,7 +11,7 @@ actor OpenRouterService {
         let apiKey = Config.openRouterAPIKey
         guard !apiKey.isEmpty else { throw FeedbackError.missingAPIKey }
 
-        let promptText = Constants.OpenRouter.systemPrompt
+        let promptText = Constants.Feedback.systemPrompt
             .replacingOccurrences(of: "{iso}", with: currentISO)
             .replacingOccurrences(of: "{shutter}", with: currentShutter)
 

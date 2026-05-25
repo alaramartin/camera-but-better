@@ -27,6 +27,14 @@ enum Constants {
     enum OpenRouter {
         static let endpoint = "https://openrouter.ai/api/v1/chat/completions"
         static let model = "google/gemma-4-26b-a4b-it:free"
+    }
+
+    enum Gemini {
+        static let endpointBase = "https://generativelanguage.googleapis.com/v1beta/models"
+        static let model = "gemini-2.5-flash"
+    }
+
+    enum Feedback {
         static let systemPrompt = """
             You are a real-time photography coach. Analyze this camera frame and give \
             exactly 3 short, actionable suggestions — one per category in this order: \

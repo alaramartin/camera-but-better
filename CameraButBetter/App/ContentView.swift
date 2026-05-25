@@ -126,7 +126,7 @@ struct ContentView: View {
     private var shouldShowOverlay: Bool {
         feedbackScheduler.isAnalyzing
             || feedbackViewModel.current != nil
-            || feedbackViewModel.lastError != nil
+            || feedbackViewModel.errorState != nil
     }
 
     // MARK: - Controls container (morphs between button and panel)
