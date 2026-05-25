@@ -13,7 +13,7 @@ struct FeedbackOverlayView: View {
 
     @State private var width: CGFloat = defaultWidth
     @State private var height: CGFloat = defaultHeight
-    @State private var dragStart: CGSize?
+    @State private var resizeStart: ResizeStart?
 
     @State private var viewportHeight: CGFloat = 0
     @State private var contentHeight: CGFloat = 0
@@ -197,23 +197,31 @@ struct FeedbackOverlayView: View {
             .frame(width: 28, height: 28)
             .contentShape(Rectangle())
             .gesture(
-                DragGesture(minimumDistance: 0)
+                DragGesture(minimumDistance: 0, coordinateSpace: .global)
                     .onChanged { value in
-                        if dragStart == nil {
-                            dragStart = CGSize(width: width, height: height)
-                        }
-                        guard let start = dragStart else { return }
-                        let newWidth = (start.width + value.translation.width)
+                        let start = resizeStart ?? ResizeStart(
+                            location: value.startLocation,
+                            width: width,
+                            height: height
+                        )
+                        if resizeStart == nil { resizeStart = start }
+                        let deltaX = value.location.x - start.location.x
+                        let deltaY = value.location.y - start.location.y
+                        width = (start.width + deltaX)
                             .clamped(to: Self.minWidth...Self.maxWidth)
-                        let newHeight = (start.height + value.translation.height)
+                        height = (start.height + deltaY)
                             .clamped(to: Self.minHeight...Self.maxHeight)
-                        width = newWidth
-                        height = newHeight
                     }
-                    .onEnded { _ in dragStart = nil }
+                    .onEnded { _ in resizeStart = nil }
             )
             .accessibilityLabel("Resize feedback panel")
     }
+}
+
+private struct ResizeStart {
+    var location: CGPoint
+    var width: CGFloat
+    var height: CGFloat
 }
 
 private struct ScrollMetrics: Equatable {
