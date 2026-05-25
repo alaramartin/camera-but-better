@@ -1,0 +1,3 @@
+enum Config {
+    static let openRouterAPIKey = "YOUR_OPENROUTER_KEY_HERE"
+}

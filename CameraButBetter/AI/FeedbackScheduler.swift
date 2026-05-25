@@ -8,14 +8,14 @@ final class FeedbackScheduler: ObservableObject {
     private let frameProvider: FrameOutputDelegate
     private let controls: ControlsViewModel
     private let feedback: FeedbackViewModel
-    private let service: GeminiService
+    private let service: OpenRouterService
 
     private var currentTask: Task<Void, Never>?
 
     init(frameProvider: FrameOutputDelegate,
          controls: ControlsViewModel,
          feedback: FeedbackViewModel,
-         service: GeminiService = GeminiService()) {
+         service: OpenRouterService = OpenRouterService()) {
         self.frameProvider = frameProvider
         self.controls = controls
         self.feedback = feedback
@@ -24,13 +24,9 @@ final class FeedbackScheduler: ObservableObject {
 
     func requestFeedback() {
         guard !isAnalyzing else { return }
-        guard KeychainService.shared.hasAPIKey else {
-            feedback.record(error: GeminiError.missingAPIKey)
-            return
-        }
         guard let buffer = frameProvider.takeLatestBuffer(),
               let base64 = ImageConverter.base64JPEG(from: buffer) else {
-            feedback.record(error: GeminiError.invalidResponse)
+            feedback.record(error: FeedbackError.invalidResponse)
             return
         }
 

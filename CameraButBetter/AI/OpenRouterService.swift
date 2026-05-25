@@ -1,41 +1,40 @@
 import Foundation
 
-actor GeminiService {
+actor OpenRouterService {
     private let session: URLSession
-    private let endpoint = "https://generativelanguage.googleapis.com/v1beta/models"
 
     init(session: URLSession = .shared) {
         self.session = session
     }
 
     func analyze(imageBase64: String, currentISO: String, currentShutter: String) async throws -> FeedbackResult {
-        guard let apiKey = KeychainService.shared.readAPIKey(), !apiKey.isEmpty else {
-            throw GeminiError.missingAPIKey
-        }
+        let apiKey = Config.openRouterAPIKey
+        guard !apiKey.isEmpty else { throw FeedbackError.missingAPIKey }
 
-        let promptText = Constants.Gemini.systemPrompt
+        let promptText = Constants.OpenRouter.systemPrompt
             .replacingOccurrences(of: "{iso}", with: currentISO)
             .replacingOccurrences(of: "{shutter}", with: currentShutter)
 
-        let request = GeminiRequest(
-            contents: [
-                .init(parts: [
-                    .init(text: promptText, inlineData: nil),
-                    .init(text: nil, inlineData: .init(mimeType: "image/jpeg", data: imageBase64)),
+        let request = ChatRequest(
+            model: Constants.OpenRouter.model,
+            messages: [
+                .init(role: "user", content: [
+                    .init(type: "text", text: promptText, imageUrl: nil),
+                    .init(type: "image_url", text: nil,
+                          imageUrl: .init(url: "data:image/jpeg;base64,\(imageBase64)")),
                 ])
             ],
-            generationConfig: .init(
-                temperature: 0.4,
-                maxOutputTokens: 512,
-                thinkingConfig: .init(thinkingBudget: 0)
-            )
+            temperature: 0.4,
+            maxTokens: 512
         )
 
-        let urlString = "\(endpoint)/\(Constants.Gemini.model):generateContent?key=\(apiKey)"
-        guard let url = URL(string: urlString) else { throw GeminiError.invalidResponse }
+        guard let url = URL(string: Constants.OpenRouter.endpoint) else {
+            throw FeedbackError.invalidResponse
+        }
 
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
+        urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.httpBody = try JSONEncoder().encode(request)
 
@@ -43,27 +42,27 @@ actor GeminiService {
         do {
             (data, response) = try await session.data(for: urlRequest)
         } catch {
-            throw GeminiError.requestFailed(error.localizedDescription)
+            throw FeedbackError.requestFailed(error.localizedDescription)
         }
 
-        guard let http = response as? HTTPURLResponse else { throw GeminiError.invalidResponse }
+        guard let http = response as? HTTPURLResponse else { throw FeedbackError.invalidResponse }
         guard (200..<300).contains(http.statusCode) else {
             let body = String(data: data, encoding: .utf8)
-            print("[Gemini] HTTP \(http.statusCode) — \(body ?? "<no body>")")
-            throw GeminiError.httpStatus(http.statusCode, body)
+            print("[OpenRouter] HTTP \(http.statusCode) — \(body ?? "<no body>")")
+            throw FeedbackError.httpStatus(http.statusCode, body)
         }
 
-        let decoded = try JSONDecoder().decode(GeminiResponse.self, from: data)
-        let text = decoded.candidates?
-            .compactMap { $0.content?.parts?.compactMap { $0.text }.joined() }
+        let decoded = try JSONDecoder().decode(ChatResponse.self, from: data)
+        let text = decoded.choices?
+            .compactMap { $0.message?.content }
             .joined(separator: "\n") ?? ""
 
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { throw GeminiError.emptyText }
+        guard !trimmed.isEmpty else { throw FeedbackError.emptyText }
 
-        print("[Gemini] raw text:\n\(trimmed)\n[/Gemini]")
+        print("[OpenRouter] raw text:\n\(trimmed)\n[/OpenRouter]")
         let suggestions = Self.parseSuggestions(from: trimmed)
-        print("[Gemini] parsed \(suggestions.count) suggestion(s)")
+        print("[OpenRouter] parsed \(suggestions.count) suggestion(s)")
         return FeedbackResult(suggestions: suggestions, timestamp: Date())
     }
 
