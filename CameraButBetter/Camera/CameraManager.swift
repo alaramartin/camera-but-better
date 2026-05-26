@@ -7,6 +7,7 @@ final class CameraManager: NSObject, ObservableObject {
     @Published private(set) var error: String?
 
     private var device: AVCaptureDevice?
+    private var rotationCoordinator: AVCaptureDevice.RotationCoordinator?
     private let photoOutput = AVCapturePhotoOutput()
     let videoOutput = AVCaptureVideoDataOutput()
     let frameDelegate = FrameOutputDelegate()
@@ -39,6 +40,7 @@ final class CameraManager: NSObject, ObservableObject {
             return
         }
         self.device = device
+        rotationCoordinator = AVCaptureDevice.RotationCoordinator(device: device, previewLayer: nil)
 
         do {
             let input = try AVCaptureDeviceInput(device: device)
@@ -64,6 +66,11 @@ final class CameraManager: NSObject, ObservableObject {
 
     func capturePhoto(delegate: AVCapturePhotoCaptureDelegate) {
         sessionQueue.async {
+            if let connection = self.photoOutput.connection(with: .video),
+               let angle = self.rotationCoordinator?.videoRotationAngleForHorizonLevelCapture,
+               connection.isVideoRotationAngleSupported(angle) {
+                connection.videoRotationAngle = angle
+            }
             let settings = AVCapturePhotoSettings()
             self.photoOutput.capturePhoto(with: settings, delegate: delegate)
         }
