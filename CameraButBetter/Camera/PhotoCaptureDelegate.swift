@@ -5,8 +5,10 @@ import UIKit
 
 final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
     private let completion: (Result<UIImage, Error>) -> Void
+    private let aspectRatio: PreviewAspectRatio
 
-    init(completion: @escaping (Result<UIImage, Error>) -> Void) {
+    init(aspectRatio: PreviewAspectRatio, completion: @escaping (Result<UIImage, Error>) -> Void) {
+        self.aspectRatio = aspectRatio
         self.completion = completion
     }
 
@@ -15,10 +17,11 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
             completion(.failure(error))
             return
         }
-        guard let data = photo.fileDataRepresentation() else {
+        guard let originalData = photo.fileDataRepresentation() else {
             completion(.failure(CaptureError.noData))
             return
         }
+        let data = PhotoCropper.crop(originalData, to: aspectRatio) ?? originalData
         let thumbnail = Self.thumbnail(from: data)
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
             guard status == .authorized || status == .limited else {

@@ -51,12 +51,15 @@ struct SessionGalleryView: View {
                     NavigationLink {
                         PhotoDetailView(photos: viewModel.sessionPhotos, initialIndex: index)
                     } label: {
-                        Image(uiImage: photo)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(minWidth: 0, maxWidth: .infinity)
-                            .aspectRatio(1, contentMode: .fill)
+                        Color.clear
+                            .aspectRatio(3.0 / 4.0, contentMode: .fit)
+                            .overlay(
+                                Image(uiImage: photo)
+                                    .resizable()
+                                    .scaledToFill()
+                            )
                             .clipped()
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }

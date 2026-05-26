@@ -8,6 +8,7 @@ final class FeedbackScheduler: ObservableObject {
     private let frameProvider: FrameOutputDelegate
     private let controls: ControlsViewModel
     private let feedback: FeedbackViewModel
+    private let overlaySettings: OverlaySettings
     private let openRouter: OpenRouterService
     private let gemini: GeminiService
 
@@ -16,11 +17,13 @@ final class FeedbackScheduler: ObservableObject {
     init(frameProvider: FrameOutputDelegate,
          controls: ControlsViewModel,
          feedback: FeedbackViewModel,
+         overlaySettings: OverlaySettings,
          openRouter: OpenRouterService = OpenRouterService(),
          gemini: GeminiService = GeminiService()) {
         self.frameProvider = frameProvider
         self.controls = controls
         self.feedback = feedback
+        self.overlaySettings = overlaySettings
         self.openRouter = openRouter
         self.gemini = gemini
     }
@@ -69,7 +72,7 @@ final class FeedbackScheduler: ObservableObject {
                          onError: @escaping (Error) -> FeedbackErrorState) {
         guard !isAnalyzing else { return }
         guard let buffer = frameProvider.takeLatestBuffer(),
-              let base64 = ImageConverter.base64JPEG(from: buffer) else {
+              let base64 = ImageConverter.base64JPEG(from: buffer, aspectRatio: overlaySettings.aspectRatio) else {
             feedback.record(errorState: FeedbackErrorState(
                 message: FeedbackError.invalidResponse.localizedDescription,
                 canRetryGemma: false,

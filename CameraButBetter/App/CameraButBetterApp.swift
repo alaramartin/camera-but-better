@@ -7,22 +7,25 @@ struct CameraButBetterApp: App {
     @StateObject private var sessionGalleryViewModel = SessionGalleryViewModel()
     @StateObject private var feedbackViewModel: FeedbackViewModel
     @StateObject private var feedbackScheduler: FeedbackScheduler
-    @StateObject private var overlaySettings = OverlaySettings()
+    @StateObject private var overlaySettings: OverlaySettings
     @StateObject private var motionManager = MotionManager()
 
     init() {
         let manager = CameraManager()
         let controls = ControlsViewModel(cameraManager: manager)
         let feedback = FeedbackViewModel()
+        let overlay = OverlaySettings()
         let scheduler = FeedbackScheduler(
             frameProvider: manager.frameDelegate,
             controls: controls,
-            feedback: feedback
+            feedback: feedback,
+            overlaySettings: overlay
         )
         _cameraManager = StateObject(wrappedValue: manager)
         _controlsViewModel = StateObject(wrappedValue: controls)
         _feedbackViewModel = StateObject(wrappedValue: feedback)
         _feedbackScheduler = StateObject(wrappedValue: scheduler)
+        _overlaySettings = StateObject(wrappedValue: overlay)
     }
 
     var body: some Scene {

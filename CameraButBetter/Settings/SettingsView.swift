@@ -2,10 +2,24 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var overlaySettings: OverlaySettings
 
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Picker("Aspect Ratio", selection: $overlaySettings.aspectRatio) {
+                        ForEach(PreviewAspectRatio.allCases) { ratio in
+                            Text(ratio.label).tag(ratio)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                } header: {
+                    Text("Composition")
+                } footer: {
+                    Text("Frames the preview and crops captured photos to this ratio.")
+                }
+
                 Section {
                     LabeledContent("Provider", value: "OpenRouter")
                     LabeledContent("Model", value: Constants.OpenRouter.model)

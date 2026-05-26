@@ -5,6 +5,7 @@ final class OverlaySettings: ObservableObject {
         static let level = "overlay.level"
         static let grid = "overlay.grid"
         static let centerCross = "overlay.centerCross"
+        static let aspectRatio = "composition.aspectRatio"
     }
 
     @Published var showLevel: Bool {
@@ -19,10 +20,16 @@ final class OverlaySettings: ObservableObject {
         didSet { UserDefaults.standard.set(showCenterCross, forKey: Key.centerCross) }
     }
 
+    @Published var aspectRatio: PreviewAspectRatio {
+        didSet { UserDefaults.standard.set(aspectRatio.rawValue, forKey: Key.aspectRatio) }
+    }
+
     init() {
         let defaults = UserDefaults.standard
         showLevel = defaults.bool(forKey: Key.level)
         showGrid = defaults.bool(forKey: Key.grid)
         showCenterCross = defaults.bool(forKey: Key.centerCross)
+        aspectRatio = defaults.string(forKey: Key.aspectRatio)
+            .flatMap(PreviewAspectRatio.init(rawValue:)) ?? .fourThree
     }
 }

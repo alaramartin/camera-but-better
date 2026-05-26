@@ -30,6 +30,7 @@
 		AA0000000000000000000047 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000037 /* SettingsView.swift */; };
 		AA0000000000000000000048 /* ImageConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000038 /* ImageConverter.swift */; };
 		AA0000000000000000000049 /* OverlaySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000004C /* OverlaySettings.swift */; };
+		AA00000000000000000000A1 /* PhotoCropper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000A2 /* PhotoCropper.swift */; };
 		AA000000000000000000004A /* MotionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000004D /* MotionManager.swift */; };
 		AA000000000000000000004B /* CameraOverlaysView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000004E /* CameraOverlaysView.swift */; };
 /* End PBXBuildFile section */
@@ -60,6 +61,7 @@
 		AA0000000000000000000037 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000038 /* ImageConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageConverter.swift; sourceTree = "<group>"; };
 		AA000000000000000000004C /* OverlaySettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlaySettings.swift; sourceTree = "<group>"; };
+		AA00000000000000000000A2 /* PhotoCropper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCropper.swift; sourceTree = "<group>"; };
 		AA000000000000000000004D /* MotionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionManager.swift; sourceTree = "<group>"; };
 		AA000000000000000000004E /* CameraOverlaysView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOverlaysView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -176,6 +178,7 @@
 				AA0000000000000000000050 /* Config.swift */,
 				AA0000000000000000000038 /* ImageConverter.swift */,
 				AA000000000000000000004C /* OverlaySettings.swift */,
+				AA00000000000000000000A2 /* PhotoCropper.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -279,6 +282,7 @@
 				AA0000000000000000000047 /* SettingsView.swift in Sources */,
 				AA0000000000000000000048 /* ImageConverter.swift in Sources */,
 				AA0000000000000000000049 /* OverlaySettings.swift in Sources */,
+				AA00000000000000000000A1 /* PhotoCropper.swift in Sources */,
 				AA000000000000000000004A /* MotionManager.swift in Sources */,
 				AA000000000000000000004B /* CameraOverlaysView.swift in Sources */,
 			);

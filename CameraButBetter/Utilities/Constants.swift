@@ -55,6 +55,33 @@ enum Constants {
     }
 }
 
+enum PreviewAspectRatio: String, CaseIterable, Identifiable {
+    case fourThree
+    case threeTwo
+    case sixteenNine
+    case oneOne
+
+    var id: String { rawValue }
+
+    var portraitRatio: CGFloat {
+        switch self {
+        case .fourThree: return 3.0 / 4.0
+        case .threeTwo: return 2.0 / 3.0
+        case .sixteenNine: return 9.0 / 16.0
+        case .oneOne: return 1.0
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .fourThree: return "4:3"
+        case .threeTwo: return "3:2"
+        case .sixteenNine: return "16:9"
+        case .oneOne: return "1:1"
+        }
+    }
+}
+
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

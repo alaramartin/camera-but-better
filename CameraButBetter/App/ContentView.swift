@@ -15,62 +15,23 @@ struct ContentView: View {
     @State private var captureError: String?
     @State private var showCaptureError = false
     @State private var activePhotoDelegate: PhotoCaptureDelegate?
+    @State private var flashOpacity = 0.0
+    @State private var shutterScale = 1.0
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            CameraPreviewView(session: cameraManager.session)
+            VStack(spacing: 0) {
+                topBar
+                previewArea
+                bottomBar
+            }
+
+            Color.black
                 .ignoresSafeArea()
-
-            overlayLayer
-
-            VStack {
-                HStack(alignment: .top) {
-                    topBarLeading
-                    Spacer()
-                    controlsContainer
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-
-                if shouldShowOverlay {
-                    HStack {
-                        FeedbackOverlayView(viewModel: feedbackViewModel, scheduler: feedbackScheduler)
-                            .padding(.horizontal, 16)
-                            .padding(.top, 8)
-                        Spacer()
-                    }
-                }
-
-                Spacer()
-            }
-
-            VStack {
-                Spacer()
-                captureButton
-                    .padding(.bottom, 40)
-            }
-
-            VStack {
-                Spacer()
-                HStack {
-                    galleryButton
-                        .padding(.leading, 28)
-                    Spacer()
-                    feedbackButton
-                        .padding(.trailing, 28)
-                }
-                .padding(.bottom, 50)
-            }
-
-            if let message = cameraManager.error {
-                VStack {
-                    Spacer()
-                    errorBanner(message)
-                        .padding(.bottom, 130)
-                }
-            }
+                .opacity(flashOpacity)
+                .allowsHitTesting(false)
         }
         .onAppear {
             cameraManager.requestPermissionAndStart()
@@ -93,6 +54,111 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Top bar (settings + controls toggle)
+
+    private var topBar: some View {
+        HStack(alignment: .center) {
+            topBarLeading
+            Spacer()
+            controlsToggle
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    private var topBarLeading: some View {
+        Button { showSettings = true } label: {
+            Image(systemName: "gearshape")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(.white)
+                .frame(width: 36, height: 36)
+                .background(.ultraThinMaterial, in: Circle())
+        }
+    }
+
+    private var controlsToggle: some View {
+        HStack(spacing: 10) {
+            if showControls {
+                Button("Reset All") {
+                    controlsViewModel.resetAll()
+                }
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.7))
+                .transition(.opacity)
+            }
+            Button {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                    showControls.toggle()
+                }
+            } label: {
+                Image(systemName: showControls ? "xmark" : "slider.horizontal.3")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.white)
+                    .frame(width: 36, height: 36)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .contentTransition(.symbolEffect(.replace))
+            }
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: showControls)
+    }
+
+    // MARK: - Preview area (framed by the selected aspect ratio)
+
+    private var previewArea: some View {
+        ZStack {
+            CameraPreviewView(session: cameraManager.session)
+            overlayLayer
+
+            if shouldShowOverlay {
+                VStack {
+                    HStack {
+                        FeedbackOverlayView(viewModel: feedbackViewModel, scheduler: feedbackScheduler)
+                            .padding(12)
+                        Spacer()
+                    }
+                    Spacer()
+                }
+            }
+
+            if showControls {
+                VStack {
+                    HStack {
+                        Spacer()
+                        controlsPanel
+                            .padding(12)
+                    }
+                    Spacer()
+                }
+            }
+
+            if let message = cameraManager.error {
+                VStack {
+                    Spacer()
+                    errorBanner(message)
+                        .padding(.bottom, 24)
+                }
+            }
+        }
+        .aspectRatio(overlaySettings.aspectRatio.portraitRatio, contentMode: .fit)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
+        .animation(.easeInOut(duration: 0.25), value: overlaySettings.aspectRatio)
+    }
+
+    // MARK: - Bottom bar (gallery, shutter, feedback)
+
+    private var bottomBar: some View {
+        HStack {
+            galleryButton
+            Spacer()
+            captureButton
+            Spacer()
+            feedbackButton
+        }
+        .padding(.horizontal, 28)
+        .padding(.vertical, 16)
+    }
+
     // MARK: - Composition overlays (grid, center cross, level)
 
     private var overlayLayer: some View {
@@ -108,19 +174,6 @@ struct ContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .ignoresSafeArea()
-    }
-
-    // MARK: - Top bar leading (settings)
-
-    private var topBarLeading: some View {
-        Button { showSettings = true } label: {
-            Image(systemName: "gearshape")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(.white)
-                .frame(width: 36, height: 36)
-                .background(.ultraThinMaterial, in: Circle())
-        }
     }
 
     private var shouldShowOverlay: Bool {
@@ -129,49 +182,16 @@ struct ContentView: View {
             || feedbackViewModel.errorState != nil
     }
 
-    // MARK: - Controls container (morphs between button and panel)
+    // MARK: - Controls panel (floats over the preview when open)
 
-    private var controlsContainer: some View {
+    private var controlsPanel: some View {
         VStack(alignment: .trailing, spacing: 0) {
-            HStack(spacing: 10) {
-                if showControls {
-                    Button("Reset All") {
-                        controlsViewModel.resetAll()
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.7))
-                    .transition(.opacity)
-                }
-                Button {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                        showControls.toggle()
-                    }
-                } label: {
-                    Image(systemName: showControls ? "xmark" : "slider.horizontal.3")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(.white)
-                        .frame(width: 22, height: 22)
-                        .contentTransition(.symbolEffect(.replace))
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-
-            if showControls {
-                Rectangle()
-                    .fill(.white.opacity(0.15))
-                    .frame(height: 0.5)
-                    .padding(.horizontal, 12)
-                    .transition(.opacity)
-
-                ControlsPanelView(viewModel: controlsViewModel)
-                    .transition(.opacity)
-            }
+            ControlsPanelView(viewModel: controlsViewModel)
         }
         .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: showControls ? 16 : .infinity))
-        .frame(width: showControls ? 250 : nil)
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: showControls)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .frame(width: 250)
+        .transition(.opacity)
     }
 
     // MARK: - Capture button
@@ -185,6 +205,7 @@ struct ContentView: View {
                 Circle()
                     .fill(.white)
                     .frame(width: 60, height: 60)
+                    .scaleEffect(shutterScale)
             }
         }
     }
@@ -255,7 +276,8 @@ struct ContentView: View {
     // MARK: - Photo capture
 
     private func capturePhoto() {
-        let delegate = PhotoCaptureDelegate { result in
+        triggerCaptureFeedback()
+        let delegate = PhotoCaptureDelegate(aspectRatio: overlaySettings.aspectRatio) { result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let thumbnail):
@@ -268,5 +290,16 @@ struct ContentView: View {
         }
         activePhotoDelegate = delegate
         cameraManager.capturePhoto(delegate: delegate)
+    }
+
+    private func triggerCaptureFeedback() {
+        withAnimation(.easeIn(duration: 0.06)) {
+            flashOpacity = 1.0
+            shutterScale = 0.9
+        }
+        withAnimation(.easeOut(duration: 0.18).delay(0.06)) {
+            flashOpacity = 0.0
+            shutterScale = 1.0
+        }
     }
 }
