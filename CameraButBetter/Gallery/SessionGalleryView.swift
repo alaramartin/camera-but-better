@@ -47,23 +47,40 @@ struct SessionGalleryView: View {
     private var photoGrid: some View {
         ScrollView {
             LazyVGrid(columns: columns, spacing: 2) {
-                ForEach(Array(viewModel.sessionPhotos.enumerated()), id: \.offset) { index, photo in
+                ForEach(Array(viewModel.sessionPhotos.enumerated()), id: \.element.id) { index, photo in
                     NavigationLink {
                         PhotoDetailView(photos: viewModel.sessionPhotos, initialIndex: index)
                     } label: {
                         Color.clear
                             .aspectRatio(3.0 / 4.0, contentMode: .fit)
                             .overlay(
-                                Image(uiImage: photo)
+                                Image(uiImage: photo.image)
                                     .resizable()
                                     .scaledToFill()
                             )
                             .clipped()
+                            .overlay(alignment: .topLeading) {
+                                if photo.isRaw {
+                                    RawBadge()
+                                        .padding(6)
+                                }
+                            }
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
             }
         }
+    }
+}
+
+struct RawBadge: View {
+    var body: some View {
+        Text("RAW")
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(Color.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 4))
     }
 }

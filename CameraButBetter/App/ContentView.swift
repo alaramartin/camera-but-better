@@ -241,7 +241,7 @@ struct ContentView: View {
     private var galleryButton: some View {
         Button { showGallery = true } label: {
             if let last = sessionGalleryViewModel.sessionPhotos.last {
-                Image(uiImage: last)
+                Image(uiImage: last.image)
                     .resizable()
                     .scaledToFill()
                     .frame(width: 52, height: 52)
@@ -282,7 +282,7 @@ struct ContentView: View {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let thumbnail):
-                    sessionGalleryViewModel.add(thumbnail)
+                    sessionGalleryViewModel.add(thumbnail, isRaw: format == .raw)
                 case .failure(let error):
                     self.captureError = error.localizedDescription
                     self.showCaptureError = true

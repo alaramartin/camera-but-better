@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct PhotoDetailView: View {
-    let photos: [UIImage]
+    let photos: [SessionPhoto]
     let initialIndex: Int
     @State private var currentIndex: Int
 
-    init(photos: [UIImage], initialIndex: Int) {
+    init(photos: [SessionPhoto], initialIndex: Int) {
         self.photos = photos
         self.initialIndex = initialIndex
         _currentIndex = State(initialValue: initialIndex)
@@ -16,12 +16,25 @@ struct PhotoDetailView: View {
             Color.black.ignoresSafeArea()
             TabView(selection: $currentIndex) {
                 ForEach(photos.indices, id: \.self) { index in
-                    ZoomableImageView(image: photos[index], index: index, currentIndex: currentIndex)
+                    ZoomableImageView(image: photos[index].image, index: index, currentIndex: currentIndex)
                         .tag(index)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
+
+            if photos.indices.contains(currentIndex), photos[currentIndex].isRaw {
+                VStack {
+                    HStack {
+                        RawBadge()
+                            .padding(.leading, 12)
+                            .padding(.top, 8)
+                        Spacer()
+                    }
+                    Spacer()
+                }
+                .allowsHitTesting(false)
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
