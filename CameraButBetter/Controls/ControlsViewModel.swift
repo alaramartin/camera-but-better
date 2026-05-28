@@ -14,6 +14,7 @@ final class ControlsViewModel: ObservableObject {
     @Published var shutterIndex: Double = Defaults.shutterIndex
     @Published var focusPosition: Double = Defaults.focusPosition
     @Published var whiteBalanceTemperature: Double = Defaults.whiteBalanceTemperature
+    @Published var whiteBalanceIsAuto: Bool = true
 
     let shutterSpeedStops: [CMTime] = [
         CMTimeMake(value: 1, timescale: 4000),
@@ -35,7 +36,9 @@ final class ControlsViewModel: ObservableObject {
         return "1/\(stop.timescale)"
     }
     var focusLabel: String { String(format: "%.2f", focusPosition) }
-    var whiteBalanceLabel: String { "\(Int(whiteBalanceTemperature.rounded()))K" }
+    var whiteBalanceLabel: String {
+        whiteBalanceIsAuto ? "Auto" : "\(Int(whiteBalanceTemperature.rounded()))K"
+    }
 
     var shutterIndexRange: ClosedRange<Double> { 0...Double(shutterSpeedStops.count - 1) }
 
@@ -50,7 +53,20 @@ final class ControlsViewModel: ObservableObject {
     func applyISO() { cameraManager.setISO(Float(iso)) }
     func applyShutterSpeed() { cameraManager.setShutterSpeed(shutterSpeedStops[Int(shutterIndex.rounded())]) }
     func applyFocus() { cameraManager.setFocus(Float(focusPosition)) }
-    func applyWhiteBalance() { cameraManager.setWhiteBalance(Float(whiteBalanceTemperature)) }
+    func applyWhiteBalance() {
+        guard !whiteBalanceIsAuto else { return }
+        cameraManager.setWhiteBalance(Float(whiteBalanceTemperature))
+    }
+
+    func setWhiteBalanceAuto() {
+        whiteBalanceIsAuto = true
+        cameraManager.resetWhiteBalanceToAuto()
+    }
+
+    func setWhiteBalanceManual() {
+        whiteBalanceIsAuto = false
+        cameraManager.setWhiteBalance(Float(whiteBalanceTemperature))
+    }
 
     // MARK: - Reset (restores continuous-auto on the device, snaps sliders to defaults visually)
 
@@ -73,6 +89,7 @@ final class ControlsViewModel: ObservableObject {
 
     func resetWhiteBalance() {
         whiteBalanceTemperature = Defaults.whiteBalanceTemperature
+        whiteBalanceIsAuto = true
         cameraManager.resetWhiteBalanceToAuto()
     }
 
@@ -81,6 +98,7 @@ final class ControlsViewModel: ObservableObject {
         shutterIndex = Defaults.shutterIndex
         focusPosition = Defaults.focusPosition
         whiteBalanceTemperature = Defaults.whiteBalanceTemperature
+        whiteBalanceIsAuto = true
         cameraManager.resetExposureToAuto()
         cameraManager.resetFocusToAuto()
         cameraManager.resetWhiteBalanceToAuto()

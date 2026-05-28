@@ -31,14 +31,7 @@ struct ControlsPanelView: View {
                 onChange: viewModel.applyFocus,
                 onReset: viewModel.resetFocus
             )
-            ControlSliderView(
-                label: "WB",
-                valueLabel: viewModel.whiteBalanceLabel,
-                value: $viewModel.whiteBalanceTemperature,
-                range: Double(Constants.Camera.colorTemperatureMin)...Double(Constants.Camera.colorTemperatureMax),
-                onChange: viewModel.applyWhiteBalance,
-                onReset: viewModel.resetWhiteBalance
-            )
+            whiteBalanceRow
 
             Rectangle()
                 .fill(.white.opacity(0.15))
@@ -50,6 +43,43 @@ struct ControlsPanelView: View {
             overlayToggle("Center", isOn: $overlaySettings.showCenterCross)
         }
         .padding(.vertical, 14)
+    }
+
+    private var whiteBalanceRow: some View {
+        HStack(spacing: 8) {
+            Text("WB")
+                .font(.caption)
+                .foregroundStyle(.white)
+                .frame(width: 46, alignment: .leading)
+            Slider(
+                value: $viewModel.whiteBalanceTemperature,
+                in: Double(Constants.Camera.colorTemperatureMin)...Double(Constants.Camera.colorTemperatureMax)
+            )
+            .tint(.white)
+            .disabled(viewModel.whiteBalanceIsAuto)
+            .opacity(viewModel.whiteBalanceIsAuto ? 0.35 : 1)
+            .onChange(of: viewModel.whiteBalanceTemperature) { _, _ in viewModel.applyWhiteBalance() }
+            HStack(spacing: 5) {
+                Button {
+                    if viewModel.whiteBalanceIsAuto {
+                        viewModel.setWhiteBalanceManual()
+                    } else {
+                        viewModel.setWhiteBalanceAuto()
+                    }
+                } label: {
+                    Text(viewModel.whiteBalanceLabel)
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.white)
+                }
+                Button(action: viewModel.resetWhiteBalance) {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+            }
+            .frame(width: 72, alignment: .trailing)
+        }
+        .padding(.horizontal, 12)
     }
 
     private func overlayToggle(_ label: String, isOn: Binding<Bool>) -> some View {

@@ -45,6 +45,15 @@ final class CameraManager: NSObject, ObservableObject {
         do {
             let input = try AVCaptureDeviceInput(device: device)
             if session.canAddInput(input) { session.addInput(input) }
+
+            try device.lockForConfiguration()
+            if device.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+                device.whiteBalanceMode = .continuousAutoWhiteBalance
+            }
+            if device.activeFormat.supportedColorSpaces.contains(.P3_D65) {
+                device.activeColorSpace = .P3_D65
+            }
+            device.unlockForConfiguration()
             if session.canAddOutput(photoOutput) {
                 session.addOutput(photoOutput)
                 if photoOutput.isAppleProRAWSupported {
@@ -91,7 +100,9 @@ final class CameraManager: NSObject, ObservableObject {
             settings.photoQualityPrioritization = .quality
             return settings
         }
-        return AVCapturePhotoSettings()
+        let settings = AVCapturePhotoSettings()
+        settings.photoQualityPrioritization = .quality
+        return settings
     }
 
     // MARK: - Manual Controls
