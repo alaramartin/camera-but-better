@@ -45,7 +45,13 @@ final class CameraManager: NSObject, ObservableObject {
         do {
             let input = try AVCaptureDeviceInput(device: device)
             if session.canAddInput(input) { session.addInput(input) }
-            if session.canAddOutput(photoOutput) { session.addOutput(photoOutput) }
+            if session.canAddOutput(photoOutput) {
+                session.addOutput(photoOutput)
+                if photoOutput.isAppleProRAWSupported {
+                    photoOutput.isAppleProRAWEnabled = true
+                }
+                photoOutput.maxPhotoQualityPrioritization = .quality
+            }
             if session.canAddOutput(videoOutput) {
                 videoOutput.alwaysDiscardsLateVideoFrames = true
                 videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
@@ -64,16 +70,28 @@ final class CameraManager: NSObject, ObservableObject {
 
     // MARK: - Capture
 
-    func capturePhoto(delegate: AVCapturePhotoCaptureDelegate) {
+    func capturePhoto(format: PhotoFormat, delegate: AVCapturePhotoCaptureDelegate) {
         sessionQueue.async {
             if let connection = self.photoOutput.connection(with: .video),
                let angle = self.rotationCoordinator?.videoRotationAngleForHorizonLevelCapture,
                connection.isVideoRotationAngleSupported(angle) {
                 connection.videoRotationAngle = angle
             }
-            let settings = AVCapturePhotoSettings()
+            let settings = self.makeSettings(for: format)
             self.photoOutput.capturePhoto(with: settings, delegate: delegate)
         }
+    }
+
+    private func makeSettings(for format: PhotoFormat) -> AVCapturePhotoSettings {
+        if format == .raw,
+           let rawFormat = photoOutput.availableRawPhotoPixelFormatTypes.first(where: {
+               AVCapturePhotoOutput.isAppleProRAWPixelFormat($0)
+           }) {
+            let settings = AVCapturePhotoSettings(rawPixelFormatType: rawFormat, processedFormat: nil)
+            settings.photoQualityPrioritization = .quality
+            return settings
+        }
+        return AVCapturePhotoSettings()
     }
 
     // MARK: - Manual Controls

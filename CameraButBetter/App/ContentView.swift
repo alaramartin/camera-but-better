@@ -277,7 +277,8 @@ struct ContentView: View {
 
     private func capturePhoto() {
         triggerCaptureFeedback()
-        let delegate = PhotoCaptureDelegate(aspectRatio: overlaySettings.aspectRatio) { result in
+        let format = overlaySettings.photoFormat
+        let delegate = PhotoCaptureDelegate(aspectRatio: overlaySettings.aspectRatio, isRaw: format == .raw) { result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let thumbnail):
@@ -289,7 +290,7 @@ struct ContentView: View {
             }
         }
         activePhotoDelegate = delegate
-        cameraManager.capturePhoto(delegate: delegate)
+        cameraManager.capturePhoto(format: format, delegate: delegate)
     }
 
     private func triggerCaptureFeedback() {

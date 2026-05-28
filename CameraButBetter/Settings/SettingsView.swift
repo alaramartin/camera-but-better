@@ -21,6 +21,19 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Picker("Format", selection: $overlaySettings.photoFormat) {
+                        ForEach(PhotoFormat.allCases) { format in
+                            Text(format.label).tag(format)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                } header: {
+                    Text("Photo Format")
+                } footer: {
+                    Text("RAW saves Apple ProRAW (DNG) at full sensor resolution. Aspect ratio crop is ignored for RAW captures.")
+                }
+
+                Section {
                     LabeledContent("Provider", value: "OpenRouter")
                     LabeledContent("Model", value: Constants.OpenRouter.model)
                     LabeledContent("Mode", value: "On-demand")
