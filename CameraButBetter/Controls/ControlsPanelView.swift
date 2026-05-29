@@ -40,6 +40,14 @@ struct ControlsPanelView: View {
                 onReset: viewModel.resetFocus
             )
             whiteBalanceRow
+            ControlSliderView(
+                label: "Bloom",
+                valueLabel: "\(Int((overlaySettings.bloomIntensity * 100).rounded()))%",
+                value: $overlaySettings.bloomIntensity,
+                range: 0...1,
+                onChange: {},
+                onReset: { overlaySettings.bloomIntensity = 0 }
+            )
 
             Rectangle()
                 .fill(.white.opacity(0.15))

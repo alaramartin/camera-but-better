@@ -21,6 +21,7 @@ final class OverlaySettings: ObservableObject {
         static let centerCross = "overlay.centerCross"
         static let aspectRatio = "composition.aspectRatio"
         static let photoFormat = "capture.photoFormat"
+        static let bloomIntensity = "effect.bloomIntensity"
     }
 
     @Published var showLevel: Bool {
@@ -43,6 +44,10 @@ final class OverlaySettings: ObservableObject {
         didSet { UserDefaults.standard.set(photoFormat.rawValue, forKey: Key.photoFormat) }
     }
 
+    @Published var bloomIntensity: Double {
+        didSet { UserDefaults.standard.set(bloomIntensity, forKey: Key.bloomIntensity) }
+    }
+
     init() {
         let defaults = UserDefaults.standard
         showLevel = defaults.bool(forKey: Key.level)
@@ -52,5 +57,6 @@ final class OverlaySettings: ObservableObject {
             .flatMap(PreviewAspectRatio.init(rawValue:)) ?? .fourThree
         photoFormat = defaults.string(forKey: Key.photoFormat)
             .flatMap(PhotoFormat.init(rawValue:)) ?? .jpeg
+        bloomIntensity = defaults.double(forKey: Key.bloomIntensity)
     }
 }

@@ -7,10 +7,12 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
     private let completion: (Result<UIImage, Error>) -> Void
     private let aspectRatio: PreviewAspectRatio
     private let isRaw: Bool
+    private let bloomIntensity: Float
 
-    init(aspectRatio: PreviewAspectRatio, isRaw: Bool, completion: @escaping (Result<UIImage, Error>) -> Void) {
+    init(aspectRatio: PreviewAspectRatio, isRaw: Bool, bloomIntensity: Float, completion: @escaping (Result<UIImage, Error>) -> Void) {
         self.aspectRatio = aspectRatio
         self.isRaw = isRaw
+        self.bloomIntensity = bloomIntensity
         self.completion = completion
     }
 
@@ -23,7 +25,11 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
             completion(.failure(CaptureError.noData))
             return
         }
-        let data = isRaw ? originalData : (PhotoCropper.crop(originalData, to: aspectRatio) ?? originalData)
+        var data = isRaw ? originalData : (PhotoCropper.crop(originalData, to: aspectRatio) ?? originalData)
+        // Bloom demosaics into a processed image, which defeats ProRAW, so it is JPEG-only.
+        if bloomIntensity > 0 && !isRaw {
+            data = BloomEffect.apply(toJPEG: data, intensity: bloomIntensity) ?? data
+        }
         let thumbnail = Self.thumbnail(from: data)
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
             guard status == .authorized || status == .limited else {

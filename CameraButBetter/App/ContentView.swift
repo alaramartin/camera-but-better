@@ -62,8 +62,9 @@ struct ContentView: View {
     // MARK: - Top bar (settings + controls toggle)
 
     private var topBar: some View {
-        HStack(alignment: .center) {
+        HStack(alignment: .center, spacing: 10) {
             topBarLeading
+            formatIndicator
             Spacer()
             Color.clear.frame(width: 36, height: 36)
         }
@@ -79,6 +80,15 @@ struct ContentView: View {
                 .frame(width: 36, height: 36)
                 .background(.ultraThinMaterial, in: Circle())
         }
+    }
+
+    private var formatIndicator: some View {
+        Text(overlaySettings.photoFormat.label)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12)
+            .frame(height: 36)
+            .background(.ultraThinMaterial, in: Capsule())
     }
 
     private var controlsMorphLayer: some View {
@@ -143,6 +153,9 @@ struct ContentView: View {
     private var previewArea: some View {
         ZStack {
             CameraPreviewView(session: cameraManager.session)
+            if overlaySettings.bloomIntensity > 0 {
+                BloomPreviewView(frameDelegate: cameraManager.frameDelegate, intensity: overlaySettings.bloomIntensity)
+            }
             overlayLayer
 
             if shouldShowOverlay {
@@ -293,7 +306,7 @@ struct ContentView: View {
     private func capturePhoto() {
         triggerCaptureFeedback()
         let format = overlaySettings.photoFormat
-        let delegate = PhotoCaptureDelegate(aspectRatio: overlaySettings.aspectRatio, isRaw: format == .raw) { result in
+        let delegate = PhotoCaptureDelegate(aspectRatio: overlaySettings.aspectRatio, isRaw: format == .raw, bloomIntensity: Float(overlaySettings.bloomIntensity)) { result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let thumbnail):

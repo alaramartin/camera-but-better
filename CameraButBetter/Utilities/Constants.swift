@@ -16,6 +16,13 @@ enum Constants {
         static let settingsColor = Color(hex: "7ED957")
     }
 
+    enum Bloom {
+        static let threshold: Float = 0.75
+        static let radiusFraction: Float = 0.01
+        static let minRadius: Float = 2
+        static let gain: Float = 1.8
+    }
+
     enum Overlay {
         static let levelAlignedThresholdDegrees: Double = 1.0
         static let levelLineLength: CGFloat = 90
