@@ -23,6 +23,26 @@ enum Constants {
         static let gain: Float = 1.8
     }
 
+    enum Zoom {
+        static let maxDisplay: CGFloat = 15.0
+        static let pointsPerZoom: CGFloat = 30
+        static let momentumDecay: CGFloat = 3.5
+        static let momentumMinVelocity: CGFloat = 0.1
+        static let momentumFrameInterval: Double = 1.0 / 90.0
+        static let collapsedWidth: CGFloat = 70
+        static let expandedWidth: CGFloat = 300
+        static let collapsedOpacity: Double = 0.35
+        static let expandedOpacity: Double = 1.0
+        static let baselineHeight: CGFloat = 0.75
+        static let tickWidth: CGFloat = 0.75
+        static let minorTickHeight: CGFloat = 6
+        static let halfTickHeight: CGFloat = 9
+        static let wholeTickHeight: CGFloat = 14
+        static let edgeFadeFraction: Double = 0.08
+        static let lineColor = Color.white
+        static let tickColor = Color.white
+    }
+
     enum Overlay {
         static let levelAlignedThresholdDegrees: Double = 1.0
         static let levelLineLength: CGFloat = 90

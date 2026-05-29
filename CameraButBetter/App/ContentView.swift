@@ -158,6 +158,12 @@ struct ContentView: View {
             }
             overlayLayer
 
+            VStack {
+                Spacer()
+                ZoomControlView()
+                    .padding(.bottom, 16)
+            }
+
             if shouldShowOverlay {
                 VStack {
                     HStack {

@@ -35,6 +35,7 @@
 		AA000000000000000000004B /* CameraOverlaysView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000004E /* CameraOverlaysView.swift */; };
 		AA00000000000000000000B0 /* BloomEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000B1 /* BloomEffect.swift */; };
 		AA00000000000000000000B2 /* BloomPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000B3 /* BloomPreviewView.swift */; };
+		AA00000000000000000000F1 /* ZoomControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000F2 /* ZoomControlView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -68,6 +69,7 @@
 		AA000000000000000000004E /* CameraOverlaysView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOverlaysView.swift; sourceTree = "<group>"; };
 		AA00000000000000000000B1 /* BloomEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BloomEffect.swift; sourceTree = "<group>"; };
 		AA00000000000000000000B3 /* BloomPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BloomPreviewView.swift; sourceTree = "<group>"; };
+		AA00000000000000000000F2 /* ZoomControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomControlView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -162,6 +164,7 @@
 				AA000000000000000000004D /* MotionManager.swift */,
 				AA000000000000000000004E /* CameraOverlaysView.swift */,
 				AA00000000000000000000B3 /* BloomPreviewView.swift */,
+				AA00000000000000000000F2 /* ZoomControlView.swift */,
 			);
 			path = Camera;
 			sourceTree = "<group>";
@@ -293,6 +296,7 @@
 				AA000000000000000000004B /* CameraOverlaysView.swift in Sources */,
 				AA00000000000000000000B0 /* BloomEffect.swift in Sources */,
 				AA00000000000000000000B2 /* BloomPreviewView.swift in Sources */,
+				AA00000000000000000000F1 /* ZoomControlView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

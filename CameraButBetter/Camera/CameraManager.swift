@@ -6,6 +6,15 @@ final class CameraManager: NSObject, ObservableObject {
 
     @Published private(set) var error: String?
 
+    @Published private(set) var currentZoom: CGFloat = 1.0
+    @Published private(set) var minZoom: CGFloat = 1.0
+    @Published private(set) var maxZoom: CGFloat = 1.0
+    @Published private(set) var isZoomGliding = false
+
+    private var displayMultiplier: CGFloat = 1.0
+    private var wideStartFactor: CGFloat = 1.0
+    private var zoomGlideTimer: Timer?
+
     private var device: AVCaptureDevice?
     private var rotationCoordinator: AVCaptureDevice.RotationCoordinator?
     private let photoOutput = AVCapturePhotoOutput()
@@ -34,7 +43,7 @@ final class CameraManager: NSObject, ObservableObject {
         session.beginConfiguration()
         session.sessionPreset = .photo
 
-        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+        guard let device = bestAvailableCamera() else {
             DispatchQueue.main.async { self.error = "No rear camera available." }
             session.commitConfiguration()
             return
@@ -53,6 +62,8 @@ final class CameraManager: NSObject, ObservableObject {
             if device.activeFormat.supportedColorSpaces.contains(.P3_D65) {
                 device.activeColorSpace = .P3_D65
             }
+            configureZoom(for: device)
+            device.videoZoomFactor = wideStartFactor
             device.unlockForConfiguration()
             if session.canAddOutput(photoOutput) {
                 session.addOutput(photoOutput)
@@ -191,6 +202,55 @@ final class CameraManager: NSObject, ObservableObject {
         }
     }
 
+    // MARK: - Zoom
+
+    func setZoom(displayZoom: CGFloat) {
+        cancelZoomGlide()
+        applyZoom(displayZoom)
+    }
+
+    func cancelZoomGlide() {
+        zoomGlideTimer?.invalidate()
+        zoomGlideTimer = nil
+        isZoomGliding = false
+    }
+
+    func startZoomGlide(initialVelocity: CGFloat) {
+        cancelZoomGlide()
+        guard abs(initialVelocity) > Constants.Zoom.momentumMinVelocity else { return }
+        isZoomGliding = true
+        var velocity = initialVelocity
+        var zoom = currentZoom
+        let dt = Constants.Zoom.momentumFrameInterval
+        zoomGlideTimer = Timer.scheduledTimer(withTimeInterval: dt, repeats: true) { [weak self] timer in
+            guard let self else { timer.invalidate(); return }
+            velocity *= exp(-Constants.Zoom.momentumDecay * CGFloat(dt))
+            zoom += velocity * CGFloat(dt)
+            let clamped = zoom.clamped(to: self.minZoom...self.maxZoom)
+            self.applyZoom(clamped)
+            if clamped != zoom || abs(velocity) < Constants.Zoom.momentumMinVelocity {
+                self.cancelZoomGlide()
+            }
+        }
+    }
+
+    private func applyZoom(_ displayZoom: CGFloat) {
+        guard let device else { return }
+        let clampedDisplay = max(minZoom, min(maxZoom, displayZoom))
+        sessionQueue.async {
+            do {
+                try device.lockForConfiguration()
+                let factor = (clampedDisplay / self.displayMultiplier)
+                    .clamped(to: device.minAvailableVideoZoomFactor...device.maxAvailableVideoZoomFactor)
+                device.videoZoomFactor = factor
+                device.unlockForConfiguration()
+                DispatchQueue.main.async { self.currentZoom = clampedDisplay }
+            } catch {
+                DispatchQueue.main.async { self.error = error.localizedDescription }
+            }
+        }
+    }
+
     // MARK: - Auto Reset
 
     func resetExposureToAuto() {
@@ -239,6 +299,39 @@ final class CameraManager: NSObject, ObservableObject {
     }
 
     // MARK: - Helpers
+
+    private func bestAvailableCamera() -> AVCaptureDevice? {
+        let preferred: [AVCaptureDevice.DeviceType] = [.builtInDualCamera, .builtInTripleCamera, .builtInWideAngleCamera]
+        for type in preferred {
+            if let device = AVCaptureDevice.default(type, for: .video, position: .back) {
+                return device
+            }
+        }
+        return AVCaptureDevice.default(for: .video)
+    }
+
+    private func configureZoom(for device: AVCaptureDevice) {
+        let switchOverFactors = device.virtualDeviceSwitchOverVideoZoomFactors.map { CGFloat(truncating: $0) }
+        let constituents = device.constituentDevices
+
+        var wideStart: CGFloat = 1.0
+        if let wideIndex = constituents.firstIndex(where: { $0.deviceType == .builtInWideAngleCamera }) {
+            if wideIndex > 0, wideIndex - 1 < switchOverFactors.count {
+                wideStart = switchOverFactors[wideIndex - 1]
+            }
+        }
+        wideStartFactor = wideStart
+        displayMultiplier = 1.0 / wideStart
+
+        let deviceMaxDisplay = device.maxAvailableVideoZoomFactor * displayMultiplier
+        let resolvedMax = min(deviceMaxDisplay, Constants.Zoom.maxDisplay)
+
+        DispatchQueue.main.async {
+            self.minZoom = 1.0
+            self.maxZoom = resolvedMax
+            self.currentZoom = 1.0
+        }
+    }
 
     private func clampDuration(_ duration: CMTime, for device: AVCaptureDevice) -> CMTime {
         let minSeconds = CMTimeGetSeconds(device.activeFormat.minExposureDuration)
