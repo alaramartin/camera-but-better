@@ -17,9 +17,10 @@ struct ContentView: View {
     @State private var activePhotoDelegate: PhotoCaptureDelegate?
     @State private var flashOpacity = 0.0
     @State private var shutterScale = 1.0
+    @State private var panelCornerRadius: CGFloat = 1000
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topTrailing) {
             Color.black.ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -27,6 +28,10 @@ struct ContentView: View {
                 previewArea
                 bottomBar
             }
+
+            controlsMorphLayer
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
 
             Color.black
                 .ignoresSafeArea()
@@ -60,7 +65,7 @@ struct ContentView: View {
         HStack(alignment: .center) {
             topBarLeading
             Spacer()
-            controlsToggle
+            Color.clear.frame(width: 36, height: 36)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -76,30 +81,61 @@ struct ContentView: View {
         }
     }
 
-    private var controlsToggle: some View {
-        HStack(spacing: 10) {
-            if showControls {
-                Button("Reset All") {
-                    controlsViewModel.resetAll()
+    private var controlsMorphLayer: some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            HStack(spacing: 10) {
+                if showControls {
+                    Button("Reset All", action: controlsViewModel.resetAll)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .transition(.opacity)
                 }
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.7))
-                .transition(.opacity)
+                Button {
+                    toggleControls()
+                } label: {
+                    Image(systemName: showControls ? "xmark" : "slider.horizontal.3")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(.white)
+                        .frame(width: 22, height: 22)
+                        .contentTransition(.symbolEffect(.replace))
+                }
             }
-            Button {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                    showControls.toggle()
-                }
-            } label: {
-                Image(systemName: showControls ? "xmark" : "slider.horizontal.3")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
-                    .background(.ultraThinMaterial, in: Circle())
-                    .contentTransition(.symbolEffect(.replace))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+
+            if showControls {
+                Rectangle()
+                    .fill(.white.opacity(0.15))
+                    .frame(height: 0.5)
+                    .padding(.horizontal, 12)
+                    .transition(.opacity)
+
+                ControlsPanelView(viewModel: controlsViewModel)
+                    .transition(.opacity)
             }
         }
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: panelCornerRadius))
+        .frame(width: showControls ? 250 : nil)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: showControls)
+    }
+
+    private func toggleControls() {
+        if showControls {
+            withAnimation(.timingCurve(0.95, 0.0, 1.0, 0.2, duration: 0.4)) {
+                panelCornerRadius = 1000
+            }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                showControls = false
+            }
+        } else {
+            withAnimation(.timingCurve(0.0, 0.95, 0.2, 1.0, duration: 0.25)) {
+                panelCornerRadius = 16
+            }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                showControls = true
+            }
+        }
     }
 
     // MARK: - Preview area (framed by the selected aspect ratio)
@@ -115,17 +151,6 @@ struct ContentView: View {
                         FeedbackOverlayView(viewModel: feedbackViewModel, scheduler: feedbackScheduler)
                             .padding(12)
                         Spacer()
-                    }
-                    Spacer()
-                }
-            }
-
-            if showControls {
-                VStack {
-                    HStack {
-                        Spacer()
-                        controlsPanel
-                            .padding(12)
                     }
                     Spacer()
                 }
@@ -183,16 +208,6 @@ struct ContentView: View {
     }
 
     // MARK: - Controls panel (floats over the preview when open)
-
-    private var controlsPanel: some View {
-        VStack(alignment: .trailing, spacing: 0) {
-            ControlsPanelView(viewModel: controlsViewModel)
-        }
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .frame(width: 250)
-        .transition(.opacity)
-    }
 
     // MARK: - Capture button
 
