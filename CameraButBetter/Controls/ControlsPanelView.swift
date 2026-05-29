@@ -24,6 +24,14 @@ struct ControlsPanelView: View {
                 onReset: viewModel.resetShutterSpeed
             )
             ControlSliderView(
+                label: "Exposure",
+                valueLabel: viewModel.exposureBiasLabel,
+                value: $viewModel.exposureBias,
+                range: Constants.Camera.exposureBiasMin...Constants.Camera.exposureBiasMax,
+                onChange: viewModel.applyExposureBias,
+                onReset: viewModel.resetExposureBias
+            )
+            ControlSliderView(
                 label: "Focus",
                 valueLabel: viewModel.focusLabel,
                 value: $viewModel.focusPosition,

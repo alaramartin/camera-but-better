@@ -6,6 +6,8 @@ enum Constants {
         static let isoMax: Double = 3200
         static let colorTemperatureMin: Float = 2000
         static let colorTemperatureMax: Float = 8000
+        static let exposureBiasMin: Double = -8.0
+        static let exposureBiasMax: Double = 8.0
     }
 
     enum UI {

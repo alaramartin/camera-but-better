@@ -135,6 +135,33 @@ final class CameraManager: NSObject, ObservableObject {
         }
     }
 
+    func setExposureBias(_ bias: Float) {
+        guard let device else { return }
+        sessionQueue.async {
+            do {
+                try device.lockForConfiguration()
+                let clamped = max(device.minExposureTargetBias, min(device.maxExposureTargetBias, bias))
+                device.setExposureTargetBias(clamped, completionHandler: nil)
+                device.unlockForConfiguration()
+            } catch {
+                DispatchQueue.main.async { self.error = error.localizedDescription }
+            }
+        }
+    }
+
+    func resetExposureBias() {
+        guard let device else { return }
+        sessionQueue.async {
+            do {
+                try device.lockForConfiguration()
+                device.setExposureTargetBias(0, completionHandler: nil)
+                device.unlockForConfiguration()
+            } catch {
+                DispatchQueue.main.async { self.error = error.localizedDescription }
+            }
+        }
+    }
+
     func setFocus(_ lensPosition: Float) {
         guard let device else { return }
         sessionQueue.async {
