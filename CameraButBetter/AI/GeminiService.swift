@@ -22,7 +22,11 @@ actor GeminiService {
                     .init(text: nil, inlineData: .init(mimeType: "image/jpeg", data: imageBase64)),
                 ])
             ],
-            generationConfig: .init(temperature: 0.4, maxOutputTokens: 512)
+            generationConfig: .init(
+                temperature: 0.4,
+                maxOutputTokens: 1024,
+                thinkingConfig: .init(thinkingBudget: 0)
+            )
         )
 
         let endpoint = "\(Constants.Gemini.endpointBase)/\(Constants.Gemini.model):generateContent"
@@ -56,6 +60,8 @@ actor GeminiService {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw GeminiError.emptyText }
 
+        let finishReason = decoded.candidates?.first?.finishReason ?? "unknown"
+        print("[Gemini] finishReason: \(finishReason)")
         print("[Gemini] raw text:\n\(trimmed)\n[/Gemini]")
         let suggestions = OpenRouterService.parseSuggestions(from: trimmed)
         print("[Gemini] parsed \(suggestions.count) suggestion(s)")
@@ -117,9 +123,13 @@ struct GeminiRequest: Encodable {
             case data
         }
     }
+    struct ThinkingConfig: Encodable {
+        let thinkingBudget: Int
+    }
     struct GenerationConfig: Encodable {
         let temperature: Double
         let maxOutputTokens: Int
+        let thinkingConfig: ThinkingConfig?
     }
 
     let contents: [Content]
@@ -135,6 +145,7 @@ struct GeminiResponse: Decodable {
             let parts: [Part]?
         }
         let content: Content?
+        let finishReason: String?
     }
     let candidates: [Candidate]?
 }
