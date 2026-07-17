@@ -335,8 +335,8 @@ struct ContentView: View {
 
     private var galleryButton: some View {
         Button { showGallery = true } label: {
-            if let last = sessionGalleryViewModel.sessionPhotos.last {
-                Image(uiImage: last.image)
+            if let latest = sessionGalleryViewModel.sessionPhotos.first {
+                Image(uiImage: latest.image)
                     .resizable()
                     .scaledToFill()
                     .frame(width: 52, height: 52)
@@ -373,11 +373,12 @@ struct ContentView: View {
     private func capturePhoto() {
         triggerCaptureFeedback()
         let format = overlaySettings.photoFormat
+        let capturedAt = Date()
         let delegate = PhotoCaptureDelegate(aspectRatio: overlaySettings.aspectRatio, isRaw: format == .raw, bloomIntensity: Float(overlaySettings.bloomIntensity)) { result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let thumbnail):
-                    sessionGalleryViewModel.add(thumbnail, isRaw: format == .raw)
+                    sessionGalleryViewModel.add(thumbnail, isRaw: format == .raw, capturedAt: capturedAt)
                 case .failure(let error):
                     self.captureError = error.localizedDescription
                     self.showCaptureError = true
@@ -393,10 +394,11 @@ struct ContentView: View {
         if cameraManager.isRecording {
             cameraManager.stopRecording()
         } else {
+            let startedAt = Date()
             cameraManager.startRecording(aspectRatio: overlaySettings.aspectRatio, bloomIntensity: Float(overlaySettings.bloomIntensity)) { result in
                 switch result {
                 case .success(let (thumbnail, url)):
-                    sessionGalleryViewModel.add(videoThumbnail: thumbnail, url: url)
+                    sessionGalleryViewModel.add(videoThumbnail: thumbnail, url: url, capturedAt: startedAt)
                 case .failure(let error):
                     captureError = error.localizedDescription
                     showCaptureError = true
