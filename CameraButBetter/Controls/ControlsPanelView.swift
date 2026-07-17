@@ -2,44 +2,50 @@ import SwiftUI
 
 struct ControlsPanelView: View {
     @ObservedObject var viewModel: ControlsViewModel
+    let manualControlsDisabled: Bool
     @EnvironmentObject private var overlaySettings: OverlaySettings
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            ControlSliderView(
-                label: "ISO",
-                valueLabel: viewModel.isoLabel,
-                value: $viewModel.iso,
-                range: Constants.Camera.isoMin...Constants.Camera.isoMax,
-                onChange: viewModel.applyISO,
-                onReset: viewModel.resetISO
-            )
-            ControlSliderView(
-                label: "Shutter",
-                valueLabel: viewModel.shutterSpeedLabel,
-                value: $viewModel.shutterIndex,
-                range: viewModel.shutterIndexRange,
-                step: 1,
-                onChange: viewModel.applyShutterSpeed,
-                onReset: viewModel.resetShutterSpeed
-            )
-            ControlSliderView(
-                label: "Exposure",
-                valueLabel: viewModel.exposureBiasLabel,
-                value: $viewModel.exposureBias,
-                range: Constants.Camera.exposureBiasMin...Constants.Camera.exposureBiasMax,
-                onChange: viewModel.applyExposureBias,
-                onReset: viewModel.resetExposureBias
-            )
-            ControlSliderView(
-                label: "Focus",
-                valueLabel: viewModel.focusLabel,
-                value: $viewModel.focusPosition,
-                range: 0...1,
-                onChange: viewModel.applyFocus,
-                onReset: viewModel.resetFocus
-            )
-            whiteBalanceRow
+            Group {
+                ControlSliderView(
+                    label: "ISO",
+                    valueLabel: viewModel.isoLabel,
+                    value: $viewModel.iso,
+                    range: Constants.Camera.isoMin...Constants.Camera.isoMax,
+                    onChange: viewModel.applyISO,
+                    onReset: viewModel.resetISO
+                )
+                ControlSliderView(
+                    label: "Shutter",
+                    valueLabel: viewModel.shutterSpeedLabel,
+                    value: $viewModel.shutterIndex,
+                    range: viewModel.shutterIndexRange,
+                    step: 1,
+                    onChange: viewModel.applyShutterSpeed,
+                    onReset: viewModel.resetShutterSpeed
+                )
+                ControlSliderView(
+                    label: "Exposure",
+                    valueLabel: viewModel.exposureBiasLabel,
+                    value: $viewModel.exposureBias,
+                    range: Constants.Camera.exposureBiasMin...Constants.Camera.exposureBiasMax,
+                    onChange: viewModel.applyExposureBias,
+                    onReset: viewModel.resetExposureBias
+                )
+                ControlSliderView(
+                    label: "Focus",
+                    valueLabel: viewModel.focusLabel,
+                    value: $viewModel.focusPosition,
+                    range: 0...1,
+                    onChange: viewModel.applyFocus,
+                    onReset: viewModel.resetFocus
+                )
+                whiteBalanceRow
+            }
+            .disabled(manualControlsDisabled)
+            .opacity(manualControlsDisabled ? 0.35 : 1)
+
             ControlSliderView(
                 label: "Bloom",
                 valueLabel: "\(Int((overlaySettings.bloomIntensity * 100).rounded()))%",

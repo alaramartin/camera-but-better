@@ -3,33 +3,37 @@ import MetalKit
 import CoreImage
 import AVFoundation
 
-struct BloomPreviewView: UIViewRepresentable {
+struct EffectPreviewView: UIViewRepresentable {
     let frameDelegate: FrameOutputDelegate
+    let depthDelegate: DepthOutputDelegate
     let intensity: Double
+    let portraitBlurAmount: Double
 
-    func makeCoordinator() -> BloomRenderer {
-        BloomRenderer(frameDelegate: frameDelegate)
+    func makeCoordinator() -> EffectRenderer {
+        EffectRenderer(frameDelegate: frameDelegate, depthDelegate: depthDelegate)
     }
 
-    func makeUIView(context: Context) -> BloomMetalView {
-        let view = BloomMetalView()
+    func makeUIView(context: Context) -> EffectMetalView {
+        let view = EffectMetalView()
         view.renderer = context.coordinator
         context.coordinator.attach(to: view)
         context.coordinator.intensity = Float(intensity)
+        context.coordinator.portraitBlurAmount = Float(portraitBlurAmount)
         return view
     }
 
-    func updateUIView(_ uiView: BloomMetalView, context: Context) {
+    func updateUIView(_ uiView: EffectMetalView, context: Context) {
         context.coordinator.intensity = Float(intensity)
+        context.coordinator.portraitBlurAmount = Float(portraitBlurAmount)
     }
 
-    static func dismantleUIView(_ uiView: BloomMetalView, coordinator: BloomRenderer) {
+    static func dismantleUIView(_ uiView: EffectMetalView, coordinator: EffectRenderer) {
         coordinator.detach()
     }
 }
 
-final class BloomMetalView: MTKView {
-    weak var renderer: BloomRenderer?
+final class EffectMetalView: MTKView {
+    weak var renderer: EffectRenderer?
 
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -41,8 +45,9 @@ final class BloomMetalView: MTKView {
     }
 }
 
-final class BloomRenderer: NSObject, MTKViewDelegate {
+final class EffectRenderer: NSObject, MTKViewDelegate {
     private let frameDelegate: FrameOutputDelegate
+    private let depthDelegate: DepthOutputDelegate
 
     private let device: MTLDevice?
     private let ciContext: CIContext?
@@ -55,9 +60,11 @@ final class BloomRenderer: NSObject, MTKViewDelegate {
 
     // Set and read on the main thread (updateUIView and draw(in:)).
     var intensity: Float = 0
+    var portraitBlurAmount: Float = 0
 
-    init(frameDelegate: FrameOutputDelegate) {
+    init(frameDelegate: FrameOutputDelegate, depthDelegate: DepthOutputDelegate) {
         self.frameDelegate = frameDelegate
+        self.depthDelegate = depthDelegate
         if let device = MTLCreateSystemDefaultDevice() {
             self.device = device
             ciContext = CIContext(mtlDevice: device, options: [.useSoftwareRenderer: false])
@@ -70,7 +77,7 @@ final class BloomRenderer: NSObject, MTKViewDelegate {
         super.init()
     }
 
-    func attach(to view: BloomMetalView) {
+    func attach(to view: EffectMetalView) {
         view.device = device
         view.delegate = self
         view.framebufferOnly = false
@@ -113,8 +120,21 @@ final class BloomRenderer: NSObject, MTKViewDelegate {
         guard size.width > 0, size.height > 0 else { return }
         guard let image = lock.withLock({ latestImage }) else { return }
 
-        let bloomed = BloomEffect.apply(to: image, intensity: intensity)
-        let filled = Self.aspectFill(bloomed, to: size)
+        var processed = image
+        if portraitBlurAmount > 0, let depth = depthDelegate.takeLatestFrame() {
+            // The depth map takes the same orientation ingest applied to the colour frame,
+            // which is what keeps the mask registered to the pixels it is masking.
+            let orientation = lock.withLock { self.orientation }
+            processed = PortraitEffect.apply(
+                to: processed,
+                disparity: depth.disparity.oriented(orientation),
+                range: depth.range,
+                blurAmount: portraitBlurAmount
+            )
+        }
+        // Bloom is glare thrown by an already-defocused highlight, so it goes last.
+        processed = BloomEffect.apply(to: processed, intensity: intensity)
+        let filled = Self.aspectFill(processed, to: size)
 
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
         ciContext.render(

@@ -16,6 +16,9 @@ final class CameraManager: NSObject, ObservableObject {
     @Published private(set) var isRecording = false
     @Published private(set) var recordingDuration: TimeInterval = 0
 
+    @Published private(set) var isPortraitSupported = false
+    @Published private(set) var isPortraitActive = false
+
     private struct PhysicalLens {
         let device: AVCaptureDevice
         let baseDisplayZoom: CGFloat
@@ -26,6 +29,10 @@ final class CameraManager: NSObject, ObservableObject {
     private var zoomGlideTimer: Timer?
 
     private var fusedDevice: AVCaptureDevice?
+    // Portrait runs on its own device: the wide+tele pair only overlaps within the tele's
+    // narrow field of view, so depth there forces the framing to roughly 3x. Ultra-wide+wide
+    // overlap across the whole wide frame, which is what allows portrait at 1x.
+    private var portraitDevice: AVCaptureDevice?
     private var physicalLenses: [PhysicalLens] = []
     private var activeDevice: AVCaptureDevice?
     private var currentInput: AVCaptureDeviceInput?
@@ -42,10 +49,14 @@ final class CameraManager: NSObject, ObservableObject {
     }
 
     private var rotationCoordinator: AVCaptureDevice.RotationCoordinator?
+    private var zoomRangeObservations: [NSKeyValueObservation] = []
     private let photoOutput = AVCapturePhotoOutput()
     let videoOutput = AVCaptureVideoDataOutput()
     let frameDelegate = FrameOutputDelegate()
     private let audioOutput = AVCaptureAudioDataOutput()
+    private let depthDataOutput = AVCaptureDepthDataOutput()
+    let depthDelegate = DepthOutputDelegate()
+    private var portraitLock = false
     private var audioInput: AVCaptureDeviceInput?
     private var recorder: VideoRecorder?
     private var recordingCompletion: ((Result<(UIImage, URL), Error>) -> Void)?
@@ -54,6 +65,7 @@ final class CameraManager: NSObject, ObservableObject {
     private var recordingStartTime: Date?
     private let sessionQueue = DispatchQueue(label: "com.alaramartin.CameraButBetter.session", qos: .userInitiated)
     private let videoOutputQueue = DispatchQueue(label: "com.alaramartin.CameraButBetter.video", qos: .userInitiated)
+    private let depthOutputQueue = DispatchQueue(label: "com.alaramartin.CameraButBetter.depth", qos: .userInitiated)
 
     override init() {
         super.init()
@@ -85,6 +97,7 @@ final class CameraManager: NSObject, ObservableObject {
         activeDevice = device
         activeBaseDisplayZoom = displayMultiplier
         rotationCoordinator = AVCaptureDevice.RotationCoordinator(device: device, previewLayer: nil)
+        observeZoomRange(on: device)
 
         do {
             let input = try AVCaptureDeviceInput(device: device)
@@ -122,6 +135,11 @@ final class CameraManager: NSObject, ObservableObject {
         }
 
         session.commitConfiguration()
+
+        portraitDevice = AVCaptureDevice.default(.builtInDualWideCamera, for: .video, position: .back)
+        let supportsPortrait = portraitDevice != nil
+        DispatchQueue.main.async { self.isPortraitSupported = supportsPortrait }
+
         session.startRunning()
     }
 
@@ -140,7 +158,7 @@ final class CameraManager: NSObject, ObservableObject {
     }
 
     private func makeSettings(for format: PhotoFormat) -> AVCapturePhotoSettings {
-        if format == .raw,
+        if format == .raw, !portraitLock,
            let rawFormat = photoOutput.availableRawPhotoPixelFormatTypes.first(where: {
                AVCapturePhotoOutput.isAppleProRAWPixelFormat($0)
            }) {
@@ -150,13 +168,19 @@ final class CameraManager: NSObject, ObservableObject {
         }
         let settings = AVCapturePhotoSettings()
         settings.photoQualityPrioritization = .quality
+        if portraitLock, photoOutput.isDepthDataDeliveryEnabled {
+            settings.isDepthDataDeliveryEnabled = true
+            // The effect is baked in and the result re-encoded, which drops auxiliary data
+            // anyway, so embedding the map would only produce a payload we discard.
+            settings.embedsDepthDataInPhoto = false
+        }
         return settings
     }
 
     // MARK: - Video Recording
 
     func startRecording(aspectRatio: PreviewAspectRatio, bloomIntensity: Float, completion: @escaping (Result<(UIImage, URL), Error>) -> Void) {
-        guard !isRecording else { return }
+        guard !isRecording, !isPortraitActive else { return }
         let orientation = Self.currentImageOrientation()
         AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
             guard let self else { return }
@@ -304,7 +328,7 @@ final class CameraManager: NSObject, ObservableObject {
 
     func setISO(_ iso: Float) {
         sessionQueue.async {
-            guard !self.recordingLock else { return }
+            guard !self.recordingLock, !self.portraitLock else { return }
             self.manualISO = iso
             self.enterManualForCurrentZoom()
         }
@@ -312,7 +336,7 @@ final class CameraManager: NSObject, ObservableObject {
 
     func setShutterSpeed(_ duration: CMTime) {
         sessionQueue.async {
-            guard !self.recordingLock else { return }
+            guard !self.recordingLock, !self.portraitLock else { return }
             self.manualShutterDuration = duration
             self.enterManualForCurrentZoom()
         }
@@ -320,7 +344,7 @@ final class CameraManager: NSObject, ObservableObject {
 
     func setFocus(_ lensPosition: Float) {
         sessionQueue.async {
-            guard !self.recordingLock else { return }
+            guard !self.recordingLock, !self.portraitLock else { return }
             self.manualFocusPosition = lensPosition
             self.enterManualForCurrentZoom()
         }
@@ -328,7 +352,7 @@ final class CameraManager: NSObject, ObservableObject {
 
     func setWhiteBalance(_ temperature: Float) {
         sessionQueue.async {
-            guard !self.recordingLock else { return }
+            guard !self.recordingLock, !self.portraitLock else { return }
             self.manualWhiteBalanceTemperature = temperature
             self.enterManualForCurrentZoom()
         }
@@ -382,6 +406,141 @@ final class CameraManager: NSObject, ObservableObject {
         sessionQueue.async {
             self.manualWhiteBalanceTemperature = nil
             self.reevaluateManualState()
+        }
+    }
+
+    // MARK: - Portrait
+    //
+    // Depth delivery needs the fused device, which is the same device the manual controls
+    // cannot use. Portrait therefore clears manual state, swaps back to the fused device,
+    // and holds portraitLock so nothing swaps the input away while depth is streaming.
+
+    func setPortraitEnabled(_ enabled: Bool) {
+        sessionQueue.async {
+            guard self.isPortraitSupported, !self.recordingLock else { return }
+            guard enabled != self.portraitLock else { return }
+            if enabled {
+                self.enablePortrait()
+            } else {
+                self.disablePortrait()
+            }
+        }
+    }
+
+    private func enablePortrait() {
+        guard let portraitDevice else {
+            DispatchQueue.main.async { self.error = "Portrait mode isn't available on this camera." }
+            return
+        }
+
+        manualISO = nil
+        manualShutterDuration = nil
+        manualFocusPosition = nil
+        manualWhiteBalanceTemperature = nil
+
+        switchInput(to: portraitDevice, baseDisplayZoom: 1.0 / Self.wideStartFactor(for: portraitDevice))
+        guard activeDevice === portraitDevice else {
+            DispatchQueue.main.async { self.error = "Couldn't switch to the portrait lens." }
+            return
+        }
+        applyControlModes(on: activeDevice)
+
+        // Only meaningful once the portrait device is the session's input.
+        guard photoOutput.isDepthDataDeliverySupported, session.canAddOutput(depthDataOutput) else {
+            revertToFusedDevice()
+            DispatchQueue.main.async { self.error = "Portrait mode isn't available on this camera." }
+            return
+        }
+
+        session.beginConfiguration()
+        session.addOutput(depthDataOutput)
+        // Without filtering the map is speckled with holes, which reads as noise in the mask.
+        depthDataOutput.isFilteringEnabled = true
+        depthDataOutput.setDelegate(depthDelegate, callbackQueue: depthOutputQueue)
+        if let connection = depthDataOutput.connection(with: .depthData) {
+            connection.isEnabled = true
+        }
+        photoOutput.isDepthDataDeliveryEnabled = true
+
+        do {
+            try portraitDevice.lockForConfiguration()
+            if let depthFormat = Self.bestDepthFormat(for: portraitDevice.activeFormat) {
+                portraitDevice.activeDepthDataFormat = depthFormat
+            }
+            portraitDevice.unlockForConfiguration()
+        } catch {
+            DispatchQueue.main.async { self.error = error.localizedDescription }
+        }
+        session.commitConfiguration()
+
+        portraitLock = true
+        refreshZoomBounds()
+        DispatchQueue.main.async { self.isPortraitActive = true }
+    }
+
+    private func disablePortrait() {
+        portraitLock = false
+        session.beginConfiguration()
+        depthDataOutput.setDelegate(nil, callbackQueue: nil)
+        photoOutput.isDepthDataDeliveryEnabled = false
+        if session.outputs.contains(depthDataOutput) {
+            session.removeOutput(depthDataOutput)
+        }
+        session.commitConfiguration()
+
+        depthDelegate.clear()
+        revertToFusedDevice()
+        DispatchQueue.main.async { self.isPortraitActive = false }
+    }
+
+    private func revertToFusedDevice() {
+        guard let fusedDevice else { return }
+        switchInput(to: fusedDevice, baseDisplayZoom: displayMultiplier)
+        applyControlModes(on: activeDevice)
+        refreshZoomBounds()
+    }
+
+    // Streaming depth narrows the device's usable zoom range: stereo only works where both
+    // cameras see the subject, so the device raises its own minimum. That happens
+    // asynchronously after commitConfiguration, and reading the range straight afterwards
+    // returns the old values — the device then silently clamps videoZoomFactor upward while
+    // the UI still shows the zoom the user asked for. Observing it is the only way to stay
+    // in sync with what the hardware actually did.
+    private func observeZoomRange(on device: AVCaptureDevice) {
+        zoomRangeObservations = [
+            device.observe(\.minAvailableVideoZoomFactor) { [weak self] _, _ in
+                self?.sessionQueue.async { self?.refreshZoomBounds() }
+            },
+            device.observe(\.maxAvailableVideoZoomFactor) { [weak self] _, _ in
+                self?.sessionQueue.async { self?.refreshZoomBounds() }
+            }
+        ]
+    }
+
+    private func refreshZoomBounds() {
+        guard let device = activeDevice else { return }
+        // The floor keeps 1.0x meaning the wide lens everywhere. It also matters for portrait:
+        // the dual-wide device would otherwise reach down to the ultra-wide, where there is no
+        // second camera below it to derive depth from.
+        let deviceMin = max(1.0, device.minAvailableVideoZoomFactor * activeBaseDisplayZoom)
+        let deviceMax = min(device.maxAvailableVideoZoomFactor * activeBaseDisplayZoom, Constants.Zoom.maxDisplay)
+        guard deviceMax > deviceMin else { return }
+
+        let clamped = currentDisplayZoom.clamped(to: deviceMin...deviceMax)
+        currentDisplayZoom = clamped
+        applyZoomFactor(for: clamped)
+
+        DispatchQueue.main.async {
+            self.minZoom = deviceMin
+            self.maxZoom = deviceMax
+            self.currentZoom = clamped
+        }
+    }
+
+    private static func bestDepthFormat(for format: AVCaptureDevice.Format) -> AVCaptureDevice.Format? {
+        format.supportedDepthDataFormats.max { first, second in
+            CMVideoFormatDescriptionGetDimensions(first.formatDescription).width
+                < CMVideoFormatDescriptionGetDimensions(second.formatDescription).width
         }
     }
 
@@ -440,7 +599,7 @@ final class CameraManager: NSObject, ObservableObject {
     }
 
     private func switchInput(to device: AVCaptureDevice, baseDisplayZoom: CGFloat) {
-        guard !recordingLock else { return }
+        guard !recordingLock, !portraitLock else { return }
         guard device !== activeDevice else {
             activeBaseDisplayZoom = baseDisplayZoom
             return
@@ -465,9 +624,16 @@ final class CameraManager: NSObject, ObservableObject {
             if device.activeFormat.supportedColorSpaces.contains(.P3_D65) {
                 device.activeColorSpace = .P3_D65
             }
+            // The incoming device starts at its own zoom factor of 1.0, which is a wider lens
+            // than the one being replaced. Setting the zoom inside this configuration block
+            // means the first frame it delivers is already correctly framed; correcting it
+            // after the commit lets a few frames escape at the wrong focal length.
+            device.videoZoomFactor = (currentDisplayZoom / baseDisplayZoom)
+                .clamped(to: device.minAvailableVideoZoomFactor...device.maxAvailableVideoZoomFactor)
             device.unlockForConfiguration()
 
             rotationCoordinator = AVCaptureDevice.RotationCoordinator(device: device, previewLayer: nil)
+            observeZoomRange(on: device)
             session.commitConfiguration()
         } catch {
             if let previousInput, session.canAddInput(previousInput) {
@@ -558,16 +724,22 @@ final class CameraManager: NSObject, ObservableObject {
         return AVCaptureDevice.default(for: .video)
     }
 
+    // Display zoom is anchored so that 1.0x is the wide lens, whichever virtual device is
+    // active: this is the video zoom factor at which that device reaches its wide camera.
+    private static func wideStartFactor(for device: AVCaptureDevice) -> CGFloat {
+        let switchOverFactors = device.virtualDeviceSwitchOverVideoZoomFactors.map { CGFloat(truncating: $0) }
+        guard let wideIndex = device.constituentDevices.firstIndex(where: { $0.deviceType == .builtInWideAngleCamera }),
+              wideIndex > 0,
+              wideIndex - 1 < switchOverFactors.count
+        else { return 1.0 }
+        return switchOverFactors[wideIndex - 1]
+    }
+
     private func configureLenses(for device: AVCaptureDevice) {
         let switchOverFactors = device.virtualDeviceSwitchOverVideoZoomFactors.map { CGFloat(truncating: $0) }
         let constituents = device.constituentDevices
 
-        var wideStart: CGFloat = 1.0
-        if let wideIndex = constituents.firstIndex(where: { $0.deviceType == .builtInWideAngleCamera }) {
-            if wideIndex > 0, wideIndex - 1 < switchOverFactors.count {
-                wideStart = switchOverFactors[wideIndex - 1]
-            }
-        }
+        let wideStart = Self.wideStartFactor(for: device)
         wideStartFactor = wideStart
         displayMultiplier = 1.0 / wideStart
 

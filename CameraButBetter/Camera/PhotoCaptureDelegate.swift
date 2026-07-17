@@ -8,11 +8,19 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
     private let aspectRatio: PreviewAspectRatio
     private let isRaw: Bool
     private let bloomIntensity: Float
+    private let portraitBlurAmount: Float
 
-    init(aspectRatio: PreviewAspectRatio, isRaw: Bool, bloomIntensity: Float, completion: @escaping (Result<UIImage, Error>) -> Void) {
+    init(
+        aspectRatio: PreviewAspectRatio,
+        isRaw: Bool,
+        bloomIntensity: Float,
+        portraitBlurAmount: Float,
+        completion: @escaping (Result<UIImage, Error>) -> Void
+    ) {
         self.aspectRatio = aspectRatio
         self.isRaw = isRaw
         self.bloomIntensity = bloomIntensity
+        self.portraitBlurAmount = portraitBlurAmount
         self.completion = completion
     }
 
@@ -25,12 +33,30 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
             completion(.failure(CaptureError.noData))
             return
         }
-        var data = isRaw ? originalData : (PhotoCropper.crop(originalData, to: aspectRatio) ?? originalData)
-        // Bloom demosaics into a processed image, which defeats ProRAW, so it is JPEG-only.
-        if bloomIntensity > 0 && !isRaw {
+        let depthData = photo.depthData
+        // The depth blur is far heavier than bloom, and this is the photo output's own queue,
+        // so keeping the chain here would stall subsequent captures.
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.process(originalData, depthData: depthData)
+        }
+    }
+
+    private func process(_ originalData: Data, depthData: AVDepthData?) {
+        var data = originalData
+        // Portrait, bloom and cropping all demosaic into a processed image, which defeats
+        // ProRAW, so they are JPEG-only. Portrait runs before the crop because the depth map
+        // covers the full uncropped frame and would otherwise misregister.
+        if portraitBlurAmount > 0, !isRaw, let depthData {
+            data = PortraitEffect.apply(toJPEG: data, depthData: depthData, blurAmount: portraitBlurAmount) ?? data
+        }
+        if !isRaw {
+            data = PhotoCropper.crop(data, to: aspectRatio) ?? data
+        }
+        if bloomIntensity > 0, !isRaw {
             data = BloomEffect.apply(toJPEG: data, intensity: bloomIntensity) ?? data
         }
-        let thumbnail = Self.thumbnail(from: data)
+        let saved = data
+        let thumbnail = Self.thumbnail(from: saved)
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
             guard status == .authorized || status == .limited else {
                 self.completion(.failure(CaptureError.photoLibraryDenied))
@@ -38,7 +64,7 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
             }
             PHPhotoLibrary.shared().performChanges {
                 let request = PHAssetCreationRequest.forAsset()
-                request.addResource(with: .photo, data: data, options: nil)
+                request.addResource(with: .photo, data: saved, options: nil)
             } completionHandler: { _, saveError in
                 if let saveError {
                     self.completion(.failure(saveError))

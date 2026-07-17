@@ -152,7 +152,7 @@ struct ContentView: View {
                     .padding(.horizontal, 12)
                     .transition(.opacity)
 
-                ControlsPanelView(viewModel: controlsViewModel)
+                ControlsPanelView(viewModel: controlsViewModel, manualControlsDisabled: cameraManager.isPortraitActive)
                     .transition(.opacity)
             }
         }
@@ -187,8 +187,13 @@ struct ContentView: View {
     private var previewArea: some View {
         ZStack {
             CameraPreviewView(session: cameraManager.session)
-            if overlaySettings.bloomIntensity > 0 {
-                BloomPreviewView(frameDelegate: cameraManager.frameDelegate, intensity: overlaySettings.bloomIntensity)
+            if overlaySettings.bloomIntensity > 0 || cameraManager.isPortraitActive {
+                EffectPreviewView(
+                    frameDelegate: cameraManager.frameDelegate,
+                    depthDelegate: cameraManager.depthDelegate,
+                    intensity: overlaySettings.bloomIntensity,
+                    portraitBlurAmount: cameraManager.isPortraitActive ? Double(overlaySettings.portraitBlurAmount) : 0
+                )
             }
             overlayLayer
 
@@ -196,6 +201,18 @@ struct ContentView: View {
                 Spacer()
                 ZoomControlView()
                     .padding(.bottom, 16)
+            }
+
+            if cameraManager.isPortraitSupported {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        PortraitControlView(onToggle: setPortrait)
+                            .disabled(cameraManager.isRecording)
+                            .opacity(cameraManager.isRecording ? 0.4 : 1)
+                    }
+                }
             }
 
             if shouldShowOverlay {
@@ -301,6 +318,8 @@ struct ContentView: View {
             }
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: cameraManager.isRecording)
         }
+        .disabled(cameraManager.isPortraitActive)
+        .opacity(cameraManager.isPortraitActive ? 0.4 : 1)
         .accessibilityLabel(cameraManager.isRecording ? "Stop recording" : "Start recording")
     }
 
@@ -374,7 +393,12 @@ struct ContentView: View {
         triggerCaptureFeedback()
         let format = overlaySettings.photoFormat
         let capturedAt = Date()
-        let delegate = PhotoCaptureDelegate(aspectRatio: overlaySettings.aspectRatio, isRaw: format == .raw, bloomIntensity: Float(overlaySettings.bloomIntensity)) { result in
+        let delegate = PhotoCaptureDelegate(
+            aspectRatio: overlaySettings.aspectRatio,
+            isRaw: format == .raw,
+            bloomIntensity: Float(overlaySettings.bloomIntensity),
+            portraitBlurAmount: cameraManager.isPortraitActive ? overlaySettings.portraitBlurAmount : 0
+        ) { result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let thumbnail):
@@ -387,6 +411,18 @@ struct ContentView: View {
         }
         activePhotoDelegate = delegate
         cameraManager.capturePhoto(format: format, delegate: delegate)
+    }
+
+    // Portrait cannot share the device with the manual controls, and its blur is baked into a
+    // processed image, so RAW is switched off here rather than silently overridden at capture
+    // time — otherwise the format indicator would claim RAW while saving JPEG.
+    private func setPortrait(_ enabled: Bool) {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        if enabled {
+            controlsViewModel.resetAll()
+            overlaySettings.photoFormat = .jpeg
+        }
+        cameraManager.setPortraitEnabled(enabled)
     }
 
     private func toggleRecording() {
