@@ -65,6 +65,14 @@ struct SessionGalleryView: View {
                                         .padding(6)
                                 }
                             }
+                            .overlay {
+                                if photo.isVideo {
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.system(size: 28))
+                                        .foregroundStyle(.white.opacity(0.9))
+                                        .shadow(radius: 3)
+                                }
+                            }
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)

@@ -1,5 +1,7 @@
 import AVFoundation
 import Combine
+import Photos
+import UIKit
 
 final class CameraManager: NSObject, ObservableObject {
     let session = AVCaptureSession()
@@ -10,6 +12,9 @@ final class CameraManager: NSObject, ObservableObject {
     @Published private(set) var minZoom: CGFloat = 1.0
     @Published private(set) var maxZoom: CGFloat = 1.0
     @Published private(set) var isZoomGliding = false
+
+    @Published private(set) var isRecording = false
+    @Published private(set) var recordingDuration: TimeInterval = 0
 
     private struct PhysicalLens {
         let device: AVCaptureDevice
@@ -40,6 +45,13 @@ final class CameraManager: NSObject, ObservableObject {
     private let photoOutput = AVCapturePhotoOutput()
     let videoOutput = AVCaptureVideoDataOutput()
     let frameDelegate = FrameOutputDelegate()
+    private let audioOutput = AVCaptureAudioDataOutput()
+    private var audioInput: AVCaptureDeviceInput?
+    private var recorder: VideoRecorder?
+    private var recordingCompletion: ((Result<(UIImage, URL), Error>) -> Void)?
+    private var recordingLock = false
+    private var recordingTimer: Timer?
+    private var recordingStartTime: Date?
     private let sessionQueue = DispatchQueue(label: "com.alaramartin.CameraButBetter.session", qos: .userInitiated)
     private let videoOutputQueue = DispatchQueue(label: "com.alaramartin.CameraButBetter.video", qos: .userInitiated)
 
@@ -141,6 +153,148 @@ final class CameraManager: NSObject, ObservableObject {
         return settings
     }
 
+    // MARK: - Video Recording
+
+    func startRecording(aspectRatio: PreviewAspectRatio, bloomIntensity: Float, completion: @escaping (Result<(UIImage, URL), Error>) -> Void) {
+        guard !isRecording else { return }
+        let orientation = Self.currentImageOrientation()
+        AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
+            guard let self else { return }
+            guard granted else {
+                DispatchQueue.main.async {
+                    self.error = "Microphone access denied. Enable it in Settings to record video with sound."
+                }
+                return
+            }
+            self.sessionQueue.async {
+                self.beginRecording(orientation: orientation, aspectRatio: aspectRatio, bloomIntensity: bloomIntensity, completion: completion)
+            }
+        }
+    }
+
+    private func beginRecording(orientation: CGImagePropertyOrientation, aspectRatio: PreviewAspectRatio, bloomIntensity: Float, completion: @escaping (Result<(UIImage, URL), Error>) -> Void) {
+        session.beginConfiguration()
+        if audioInput == nil, let device = AVCaptureDevice.default(for: .audio) {
+            if let input = try? AVCaptureDeviceInput(device: device), session.canAddInput(input) {
+                session.addInput(input)
+                audioInput = input
+            }
+        }
+        if session.canAddOutput(audioOutput) {
+            session.addOutput(audioOutput)
+        }
+        session.commitConfiguration()
+
+        let recorder = VideoRecorder()
+        audioOutput.setSampleBufferDelegate(recorder, queue: recorder.recordingQueue)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("CBB_\(UUID().uuidString).mov")
+        recorder.start(url: url, orientation: orientation, aspectRatio: aspectRatio, bloomIntensity: bloomIntensity)
+        frameDelegate.setFrameHandler({ [weak recorder] buffer in recorder?.appendVideo(buffer) }, forKey: "recorder")
+
+        self.recorder = recorder
+        self.recordingCompletion = completion
+        self.recordingLock = true
+
+        DispatchQueue.main.async {
+            self.recordingStartTime = Date()
+            self.recordingDuration = 0
+            self.isRecording = true
+            self.startRecordingTimer()
+        }
+    }
+
+    func stopRecording() {
+        guard isRecording else { return }
+        stopRecordingTimer()
+        isRecording = false
+        frameDelegate.removeFrameHandler(forKey: "recorder")
+        let recorder = self.recorder
+        sessionQueue.async {
+            self.recordingLock = false
+            self.session.beginConfiguration()
+            self.audioOutput.setSampleBufferDelegate(nil, queue: nil)
+            if self.session.outputs.contains(self.audioOutput) {
+                self.session.removeOutput(self.audioOutput)
+            }
+            if let audioInput = self.audioInput {
+                self.session.removeInput(audioInput)
+                self.audioInput = nil
+            }
+            self.session.commitConfiguration()
+
+            recorder?.finish { result in
+                switch result {
+                case .success(let url):
+                    self.finalizeVideo(url)
+                case .failure(let error):
+                    DispatchQueue.main.async {
+                        self.recordingCompletion?(.failure(error))
+                        self.recordingCompletion = nil
+                    }
+                }
+                self.recorder = nil
+            }
+        }
+    }
+
+    private func finalizeVideo(_ url: URL) {
+        PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+            guard status == .authorized || status == .limited else {
+                DispatchQueue.main.async {
+                    self.recordingCompletion?(.failure(PhotoCaptureDelegate.CaptureError.photoLibraryDenied))
+                    self.recordingCompletion = nil
+                }
+                return
+            }
+            PHPhotoLibrary.shared().performChanges {
+                PHAssetCreationRequest.forAsset().addResource(with: .video, fileURL: url, options: nil)
+            } completionHandler: { success, error in
+                let thumbnail = self.videoThumbnail(for: url)
+                DispatchQueue.main.async {
+                    if success, let thumbnail {
+                        self.recordingCompletion?(.success((thumbnail, url)))
+                    } else {
+                        self.recordingCompletion?(.failure(error ?? PhotoCaptureDelegate.CaptureError.noData))
+                    }
+                    self.recordingCompletion = nil
+                }
+            }
+        }
+    }
+
+    private func videoThumbnail(for url: URL) -> UIImage? {
+        let asset = AVURLAsset(url: url)
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: 1200, height: 1200)
+        guard let cgImage = try? generator.copyCGImage(at: .zero, actualTime: nil) else { return nil }
+        return UIImage(cgImage: cgImage)
+    }
+
+    private func startRecordingTimer() {
+        recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            guard let self, let start = self.recordingStartTime else { return }
+            self.recordingDuration = Date().timeIntervalSince(start)
+        }
+    }
+
+    private func stopRecordingTimer() {
+        recordingTimer?.invalidate()
+        recordingTimer = nil
+        recordingStartTime = nil
+    }
+
+    private static func currentImageOrientation() -> CGImagePropertyOrientation {
+        let interfaceOrientation = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.interfaceOrientation ?? .portrait
+        switch interfaceOrientation {
+        case .portrait: return .right
+        case .portraitUpsideDown: return .left
+        case .landscapeLeft: return .down
+        case .landscapeRight: return .up
+        default: return .right
+        }
+    }
+
     // MARK: - Manual Controls
     //
     // The fused multi-camera device used for seamless zoom cannot do custom exposure,
@@ -150,6 +304,7 @@ final class CameraManager: NSObject, ObservableObject {
 
     func setISO(_ iso: Float) {
         sessionQueue.async {
+            guard !self.recordingLock else { return }
             self.manualISO = iso
             self.enterManualForCurrentZoom()
         }
@@ -157,6 +312,7 @@ final class CameraManager: NSObject, ObservableObject {
 
     func setShutterSpeed(_ duration: CMTime) {
         sessionQueue.async {
+            guard !self.recordingLock else { return }
             self.manualShutterDuration = duration
             self.enterManualForCurrentZoom()
         }
@@ -164,6 +320,7 @@ final class CameraManager: NSObject, ObservableObject {
 
     func setFocus(_ lensPosition: Float) {
         sessionQueue.async {
+            guard !self.recordingLock else { return }
             self.manualFocusPosition = lensPosition
             self.enterManualForCurrentZoom()
         }
@@ -171,6 +328,7 @@ final class CameraManager: NSObject, ObservableObject {
 
     func setWhiteBalance(_ temperature: Float) {
         sessionQueue.async {
+            guard !self.recordingLock else { return }
             self.manualWhiteBalanceTemperature = temperature
             self.enterManualForCurrentZoom()
         }
@@ -282,6 +440,7 @@ final class CameraManager: NSObject, ObservableObject {
     }
 
     private func switchInput(to device: AVCaptureDevice, baseDisplayZoom: CGFloat) {
+        guard !recordingLock else { return }
         guard device !== activeDevice else {
             activeBaseDisplayZoom = baseDisplayZoom
             return

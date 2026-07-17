@@ -18,6 +18,7 @@ struct ContentView: View {
     @State private var flashOpacity = 0.0
     @State private var shutterScale = 1.0
     @State private var panelCornerRadius: CGFloat = 1000
+    @State private var recordingBlink = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -66,10 +67,41 @@ struct ContentView: View {
             topBarLeading
             formatIndicator
             Spacer()
-            Color.clear.frame(width: 36, height: 36)
+            if cameraManager.isRecording {
+                recordingIndicator
+            } else {
+                Color.clear.frame(width: 36, height: 36)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+    }
+
+    private var recordingIndicator: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(Constants.Recording.recordColor)
+                .frame(width: 8, height: 8)
+                .opacity(recordingBlink ? 1 : 0.2)
+            Text(formattedDuration)
+                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 36)
+        .background(Constants.Recording.recordColor.opacity(0.25), in: Capsule())
+        .overlay(Capsule().strokeBorder(Constants.Recording.recordColor.opacity(0.7), lineWidth: 1))
+        .onAppear {
+            recordingBlink = false
+            withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
+                recordingBlink = true
+            }
+        }
+    }
+
+    private var formattedDuration: String {
+        let total = Int(cameraManager.recordingDuration)
+        return String(format: "%d:%02d", total / 60, total % 60)
     }
 
     private var topBarLeading: some View {
@@ -128,6 +160,8 @@ struct ContentView: View {
         .clipShape(RoundedRectangle(cornerRadius: panelCornerRadius))
         .frame(width: showControls ? 250 : nil)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: showControls)
+        .disabled(cameraManager.isRecording)
+        .opacity(cameraManager.isRecording ? 0.4 : 1)
     }
 
     private func toggleControls() {
@@ -192,12 +226,15 @@ struct ContentView: View {
     // MARK: - Bottom bar (gallery, shutter, feedback)
 
     private var bottomBar: some View {
-        HStack {
-            galleryButton
-            Spacer()
+        ZStack {
+            HStack {
+                galleryButton
+                Spacer()
+                feedbackButton
+            }
             captureButton
-            Spacer()
-            feedbackButton
+            recordButton
+                .offset(x: -(36 + 16 + Constants.Recording.buttonRingSize / 2))
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 16)
@@ -244,6 +281,29 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Record button
+
+    private var recordButton: some View {
+        Button(action: toggleRecording) {
+            ZStack {
+                Circle()
+                    .strokeBorder(.white, lineWidth: 3)
+                    .frame(width: Constants.Recording.buttonRingSize, height: Constants.Recording.buttonRingSize)
+                if cameraManager.isRecording {
+                    RoundedRectangle(cornerRadius: Constants.Recording.buttonStopCornerRadius)
+                        .fill(Constants.Recording.recordColor)
+                        .frame(width: Constants.Recording.buttonStopSize, height: Constants.Recording.buttonStopSize)
+                } else {
+                    Circle()
+                        .fill(Constants.Recording.recordColor)
+                        .frame(width: Constants.Recording.buttonInnerSize, height: Constants.Recording.buttonInnerSize)
+                }
+            }
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: cameraManager.isRecording)
+        }
+        .accessibilityLabel(cameraManager.isRecording ? "Stop recording" : "Start recording")
+    }
+
     // MARK: - Feedback button
 
     private var feedbackButton: some View {
@@ -266,7 +326,8 @@ struct ContentView: View {
                 }
             }
         }
-        .disabled(feedbackScheduler.isAnalyzing)
+        .disabled(feedbackScheduler.isAnalyzing || cameraManager.isRecording)
+        .opacity(cameraManager.isRecording ? 0.4 : 1)
         .accessibilityLabel("Get AI feedback on current frame")
     }
 
@@ -325,6 +386,23 @@ struct ContentView: View {
         }
         activePhotoDelegate = delegate
         cameraManager.capturePhoto(format: format, delegate: delegate)
+    }
+
+    private func toggleRecording() {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        if cameraManager.isRecording {
+            cameraManager.stopRecording()
+        } else {
+            cameraManager.startRecording(aspectRatio: overlaySettings.aspectRatio, bloomIntensity: Float(overlaySettings.bloomIntensity)) { result in
+                switch result {
+                case .success(let (thumbnail, url)):
+                    sessionGalleryViewModel.add(videoThumbnail: thumbnail, url: url)
+                case .failure(let error):
+                    captureError = error.localizedDescription
+                    showCaptureError = true
+                }
+            }
+        }
     }
 
     private func triggerCaptureFeedback() {

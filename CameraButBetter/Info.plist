@@ -22,6 +22,8 @@
 	<string>Camera access is required to capture photos with manual controls.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Photo library access is required to save photos to your Camera Roll.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access is required to record audio with your videos.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

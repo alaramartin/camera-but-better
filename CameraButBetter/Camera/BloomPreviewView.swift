@@ -81,14 +81,14 @@ final class BloomRenderer: NSObject, MTKViewDelegate {
         // The frame callback runs on the video queue: it only stages the latest image.
         // All drawable access happens in draw(in:) on the main thread to avoid the
         // "addPresentedHandler cannot be called after drawable has been presented" race.
-        frameDelegate.setFrameHandler { [weak self, weak view] sampleBuffer in
+        frameDelegate.setFrameHandler({ [weak self, weak view] sampleBuffer in
             self?.ingest(sampleBuffer)
             DispatchQueue.main.async { view?.setNeedsDisplay() }
-        }
+        }, forKey: "preview")
     }
 
     func detach() {
-        frameDelegate.setFrameHandler(nil)
+        frameDelegate.removeFrameHandler(forKey: "preview")
         lock.withLock { latestImage = nil }
     }
 

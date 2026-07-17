@@ -1,3 +1,4 @@
+import AVKit
 import SwiftUI
 
 struct PhotoDetailView: View {
@@ -16,8 +17,15 @@ struct PhotoDetailView: View {
             Color.black.ignoresSafeArea()
             TabView(selection: $currentIndex) {
                 ForEach(photos.indices, id: \.self) { index in
-                    ZoomableImageView(image: photos[index].image, index: index, currentIndex: currentIndex)
-                        .tag(index)
+                    Group {
+                        if let url = photos[index].videoURL {
+                            VideoPlayer(player: AVPlayer(url: url))
+                                .ignoresSafeArea()
+                        } else {
+                            ZoomableImageView(image: photos[index].image, index: index, currentIndex: currentIndex)
+                        }
+                    }
+                    .tag(index)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))

@@ -1,3 +1,4 @@
+import AVFoundation
 import SwiftUI
 
 enum Constants {
@@ -21,6 +22,22 @@ enum Constants {
         static let radiusFraction: Float = 0.01
         static let minRadius: Float = 2
         static let gain: Float = 1.8
+    }
+
+    enum Recording {
+        static let videoCodec = AVVideoCodecType.hevc
+        static let videoBitRate = 12_000_000
+        static let audioSettings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatMPEG4AAC,
+            AVNumberOfChannelsKey: 1,
+            AVSampleRateKey: 44_100,
+            AVEncoderBitRateKey: 96_000
+        ]
+        static let buttonRingSize: CGFloat = 56
+        static let buttonInnerSize: CGFloat = 42
+        static let buttonStopSize: CGFloat = 24
+        static let buttonStopCornerRadius: CGFloat = 6
+        static let recordColor = Color(hex: "FF3B30")
     }
 
     enum Zoom {

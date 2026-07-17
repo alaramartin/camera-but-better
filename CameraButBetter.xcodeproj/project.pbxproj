@@ -36,6 +36,7 @@
 		AA00000000000000000000B0 /* BloomEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000B1 /* BloomEffect.swift */; };
 		AA00000000000000000000B2 /* BloomPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000B3 /* BloomPreviewView.swift */; };
 		AA00000000000000000000F1 /* ZoomControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000F2 /* ZoomControlView.swift */; };
+		AA00000000000000000000C0 /* VideoRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000C1 /* VideoRecorder.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -70,6 +71,7 @@
 		AA00000000000000000000B1 /* BloomEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BloomEffect.swift; sourceTree = "<group>"; };
 		AA00000000000000000000B3 /* BloomPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BloomPreviewView.swift; sourceTree = "<group>"; };
 		AA00000000000000000000F2 /* ZoomControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomControlView.swift; sourceTree = "<group>"; };
+		AA00000000000000000000C1 /* VideoRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoRecorder.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -165,6 +167,7 @@
 				AA000000000000000000004E /* CameraOverlaysView.swift */,
 				AA00000000000000000000B3 /* BloomPreviewView.swift */,
 				AA00000000000000000000F2 /* ZoomControlView.swift */,
+				AA00000000000000000000C1 /* VideoRecorder.swift */,
 			);
 			path = Camera;
 			sourceTree = "<group>";
@@ -297,6 +300,7 @@
 				AA00000000000000000000B0 /* BloomEffect.swift in Sources */,
 				AA00000000000000000000B2 /* BloomPreviewView.swift in Sources */,
 				AA00000000000000000000F1 /* ZoomControlView.swift in Sources */,
+				AA00000000000000000000C0 /* VideoRecorder.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
