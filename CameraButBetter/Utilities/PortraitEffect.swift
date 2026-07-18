@@ -28,9 +28,15 @@ enum PortraitEffect {
 
         // CIMaskedVariableBlur blurs in proportion to mask luminance, so the mask has to be
         // inverted disparity: the near subject has high disparity and must end up at 0 (sharp).
+        // A subject is not a single depth plane — its sides and back sit below the peak
+        // disparity, as does the ramp the filtered depth map smears along its silhouette — so
+        // the nearest band of the range is pinned to 0 and the blur ramp is normalised over
+        // only the remaining background span.
         let span = range.upperBound - range.lowerBound
-        let slope = CGFloat(-1 / span)
-        let intercept = CGFloat(range.upperBound / span)
+        let focusFloor = range.upperBound - span * Constants.Portrait.focusBandFraction
+        let backgroundSpan = focusFloor - range.lowerBound
+        let slope = CGFloat(-1 / backgroundSpan)
+        let intercept = CGFloat(focusFloor / backgroundSpan)
         let mask = upscaled
             .applyingFilter("CIColorMatrix", parameters: [
                 "inputRVector": CIVector(x: slope, y: 0, z: 0, w: 0),
@@ -96,7 +102,11 @@ enum PortraitEffect {
         // inputAperture is not an f-number: it runs 0...22 with higher meaning more blur,
         // which is the opposite of a lens, so it tracks blurAmount rather than the f-stop.
         filter.setValue(Constants.Portrait.coreImageApertureMax * blurAmount, forKey: "inputAperture")
-        filter.setValue(input.extent.width / disparityImage.extent.width, forKey: "inputScaleFactor")
+        // inputScaleFactor is not the image-to-disparity ratio (the filter registers the
+        // disparity map itself); it declares how far the input image is downscaled from the
+        // original capture, so anything above 1 inflates the blur kernel until it floods
+        // across depth edges. Full-resolution input means 1.
+        filter.setValue(1.0, forKey: "inputScaleFactor")
         if let calibration = disparityData.cameraCalibrationData {
             filter.setValue(calibration, forKey: "inputCalibrationData")
         }

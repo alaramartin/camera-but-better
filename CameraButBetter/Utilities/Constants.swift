@@ -107,6 +107,10 @@ enum Constants {
         // Below this the scene is effectively flat, and normalising would amplify sensor noise
         // into full-scale blur.
         static let minDisparitySpan: Float = 0.02
+        // Fraction of the disparity range nearest the camera that stays fully sharp. Without
+        // it only the subject's single nearest plane is at zero blur, and its sides, back and
+        // silhouette ramp all pick up partial blur.
+        static let focusBandFraction: Float = 0.3
 
         // Measured in depth-map pixels, so they hold as the upscale factor changes. The depth
         // map is roughly a twentieth of the frame's resolution and is least reliable exactly at
