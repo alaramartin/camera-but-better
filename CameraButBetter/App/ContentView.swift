@@ -191,8 +191,9 @@ struct ContentView: View {
                 EffectPreviewView(
                     frameDelegate: cameraManager.frameDelegate,
                     depthDelegate: cameraManager.depthDelegate,
+                    subjectMaskProvider: cameraManager.subjectMaskProvider,
                     intensity: overlaySettings.bloomIntensity,
-                    portraitBlurAmount: cameraManager.isPortraitActive ? Double(overlaySettings.portraitBlurAmount) : 0
+                    portraitBlurAmount: cameraManager.isPortraitActive ? Double(Constants.Portrait.blurStrength) : 0
                 )
             }
             overlayLayer
@@ -397,7 +398,7 @@ struct ContentView: View {
             aspectRatio: overlaySettings.aspectRatio,
             isRaw: format == .raw,
             bloomIntensity: Float(overlaySettings.bloomIntensity),
-            portraitBlurAmount: cameraManager.isPortraitActive ? overlaySettings.portraitBlurAmount : 0
+            portraitBlurAmount: cameraManager.isPortraitActive ? Constants.Portrait.blurStrength : 0
         ) { result in
             DispatchQueue.main.async {
                 switch result {

@@ -22,7 +22,6 @@ final class OverlaySettings: ObservableObject {
         static let aspectRatio = "composition.aspectRatio"
         static let photoFormat = "capture.photoFormat"
         static let bloomIntensity = "effect.bloomIntensity"
-        static let portraitStopIndex = "effect.portraitStopIndex"
     }
 
     @Published var showLevel: Bool {
@@ -49,25 +48,6 @@ final class OverlaySettings: ObservableObject {
         didSet { UserDefaults.standard.set(bloomIntensity, forKey: Key.bloomIntensity) }
     }
 
-    @Published var portraitStopIndex: Double {
-        didSet { UserDefaults.standard.set(portraitStopIndex, forKey: Key.portraitStopIndex) }
-    }
-
-    var portraitAperture: Double {
-        pow(2, portraitStopIndex / 2)
-    }
-
-    var portraitApertureLabel: String {
-        String(format: portraitAperture >= 8 ? "f/%.0f" : "f/%.1f", portraitAperture)
-    }
-
-    // 0 at f/16, 1 at f/1.4. Both the preview blur radius and the capture's inputAperture
-    // derive from this one value so they cannot drift apart.
-    var portraitBlurAmount: Float {
-        let span = Constants.Portrait.stopIndexMax - Constants.Portrait.stopIndexMin
-        return Float((Constants.Portrait.stopIndexMax - portraitStopIndex) / span)
-    }
-
     init() {
         let defaults = UserDefaults.standard
         showLevel = defaults.bool(forKey: Key.level)
@@ -78,8 +58,5 @@ final class OverlaySettings: ObservableObject {
         photoFormat = defaults.string(forKey: Key.photoFormat)
             .flatMap(PhotoFormat.init(rawValue:)) ?? .jpeg
         bloomIntensity = defaults.double(forKey: Key.bloomIntensity)
-        // An unset double reads back as 0, which is a valid bloom intensity but would mean f/1.0 here.
-        let storedStopIndex = defaults.double(forKey: Key.portraitStopIndex)
-        portraitStopIndex = storedStopIndex == 0 ? Constants.Portrait.defaultStopIndex : storedStopIndex
     }
 }

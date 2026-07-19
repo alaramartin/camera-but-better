@@ -61,34 +61,14 @@ enum Constants {
     }
 
     enum Portrait {
-        // stopIndex is 2 * log2(aperture), so whole photographic stops land on integers:
-        // 1 = f/1.4, 2 = f/2, 3 = f/2.8 ... 8 = f/16. Detents are then just Int(value) changes.
-        static let stopIndexMin: Double = 1
-        static let stopIndexMax: Double = 8
-        static let defaultStopIndex: Double = 3
-
-        static let wheelRadius: CGFloat = 130
-        static let arcStartDegrees: Double = 180
-        static let arcEndDegrees: Double = 270
-        static let indicatorDegrees: Double = 225
-        static let degreesPerStop: Double = 30
-        static let pointsPerStop: CGFloat = 44
-        static let ticksPerStop: Int = 3
-
-        static let revealDelay: Double = 0.25
-        static let revealDistance: CGFloat = 8
-
         static let buttonSize: CGFloat = 44
         static let buttonInset: CGFloat = 12
-        static let collapsedOpacity: Double = 0.55
-        static let expandedOpacity: Double = 1.0
-        static let baselineWidth: CGFloat = 0.75
-        static let tickWidth: CGFloat = 0.75
-        static let minorTickLength: CGFloat = 6
-        static let majorTickLength: CGFloat = 14
-        static let lineColor = Color.white
-        static let tickColor = Color.white
+        static let buttonOpacity: Double = 0.55
         static let activeColor = Color(hex: "FFD60A")
+
+        // One fixed, Apple-style strength (0...1) instead of a manual aperture. It feeds both
+        // the preview radius and the capture aperture so the two cannot drift apart.
+        static let blurStrength: Float = 0.6
 
         // The live preview approximates the capture's CIDepthBlurEffect with a masked blur,
         // so these two are a calibration pair: tune them together until preview matches capture.
@@ -110,15 +90,19 @@ enum Constants {
         // Fraction of the disparity range nearest the camera that stays fully sharp. Without
         // it only the subject's single nearest plane is at zero blur, and its sides, back and
         // silhouette ramp all pick up partial blur.
-        static let focusBandFraction: Float = 0.3
+        static let focusBandFraction: Float = 0.2
+        // Fraction of the range over which blur then ramps from zero to full. Short on
+        // purpose: background pixels whose disparity the depth map smeared upward near the
+        // silhouette must hit full blur within a few depth pixels, or they read as a sharp
+        // halo. Depth gradation in the far background is sacrificed for that edge.
+        static let blurRampFraction: Float = 0.25
 
-        // Measured in depth-map pixels, so they hold as the upscale factor changes. The depth
-        // map is roughly a twentieth of the frame's resolution and is least reliable exactly at
-        // object boundaries, so its edges land as a soft ramp straddling each silhouette —
-        // which blurs the subject's own outline. Eroding pushes the whole ramp out into the
-        // background; the subject keeps a hard edge, at the cost of a thin sharp halo around it.
-        static let maskErosionDepthPixels: Float = 1.5
-        static let maskSofteningDepthPixels: Float = 0.75
+        // Measured in depth-map pixels, so they hold as the upscale factor changes. The
+        // edge-guided upsample puts the mask boundary on the silhouette itself, so these only
+        // nudge and antialias it — grown past a trace, either one re-draws a halo around the
+        // subject (sharp for erosion, blurred for softening).
+        static let maskErosionDepthPixels: Float = 0.5
+        static let maskSofteningDepthPixels: Float = 0.25
     }
 
     enum Overlay {

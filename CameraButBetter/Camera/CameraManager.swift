@@ -56,6 +56,7 @@ final class CameraManager: NSObject, ObservableObject {
     private let audioOutput = AVCaptureAudioDataOutput()
     private let depthDataOutput = AVCaptureDepthDataOutput()
     let depthDelegate = DepthOutputDelegate()
+    let subjectMaskProvider = SubjectMaskProvider()
     private var portraitLock = false
     private var audioInput: AVCaptureDeviceInput?
     private var recorder: VideoRecorder?
@@ -170,9 +171,11 @@ final class CameraManager: NSObject, ObservableObject {
         settings.photoQualityPrioritization = .quality
         if portraitLock, photoOutput.isDepthDataDeliveryEnabled {
             settings.isDepthDataDeliveryEnabled = true
+            settings.isPortraitEffectsMatteDeliveryEnabled = photoOutput.isPortraitEffectsMatteDeliveryEnabled
             // The effect is baked in and the result re-encoded, which drops auxiliary data
             // anyway, so embedding the map would only produce a payload we discard.
             settings.embedsDepthDataInPhoto = false
+            settings.embedsPortraitEffectsMatteInPhoto = false
         }
         return settings
     }
@@ -461,6 +464,9 @@ final class CameraManager: NSObject, ObservableObject {
             connection.isEnabled = true
         }
         photoOutput.isDepthDataDeliveryEnabled = true
+        // Requires depth delivery already enabled. Person-only: when no person is in frame
+        // the capture simply arrives without a matte and the depth-only path applies.
+        photoOutput.isPortraitEffectsMatteDeliveryEnabled = photoOutput.isPortraitEffectsMatteDeliverySupported
 
         do {
             try portraitDevice.lockForConfiguration()
@@ -473,6 +479,13 @@ final class CameraManager: NSObject, ObservableObject {
         }
         session.commitConfiguration()
 
+        frameDelegate.setFrameHandler({ [subjectMaskProvider, depthDelegate] sampleBuffer in
+            subjectMaskProvider.submit(
+                sampleBuffer,
+                disparity: depthDelegate.takeLatestFrame()?.disparity.pixelBuffer
+            )
+        }, forKey: "subjectMask")
+
         portraitLock = true
         refreshZoomBounds()
         DispatchQueue.main.async { self.isPortraitActive = true }
@@ -482,12 +495,15 @@ final class CameraManager: NSObject, ObservableObject {
         portraitLock = false
         session.beginConfiguration()
         depthDataOutput.setDelegate(nil, callbackQueue: nil)
+        photoOutput.isPortraitEffectsMatteDeliveryEnabled = false
         photoOutput.isDepthDataDeliveryEnabled = false
         if session.outputs.contains(depthDataOutput) {
             session.removeOutput(depthDataOutput)
         }
         session.commitConfiguration()
 
+        frameDelegate.removeFrameHandler(forKey: "subjectMask")
+        subjectMaskProvider.clear()
         depthDelegate.clear()
         revertToFusedDevice()
         DispatchQueue.main.async { self.isPortraitActive = false }

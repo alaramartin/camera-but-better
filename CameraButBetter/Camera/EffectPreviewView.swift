@@ -6,11 +6,16 @@ import AVFoundation
 struct EffectPreviewView: UIViewRepresentable {
     let frameDelegate: FrameOutputDelegate
     let depthDelegate: DepthOutputDelegate
+    let subjectMaskProvider: SubjectMaskProvider
     let intensity: Double
     let portraitBlurAmount: Double
 
     func makeCoordinator() -> EffectRenderer {
-        EffectRenderer(frameDelegate: frameDelegate, depthDelegate: depthDelegate)
+        EffectRenderer(
+            frameDelegate: frameDelegate,
+            depthDelegate: depthDelegate,
+            subjectMaskProvider: subjectMaskProvider
+        )
     }
 
     func makeUIView(context: Context) -> EffectMetalView {
@@ -48,6 +53,7 @@ final class EffectMetalView: MTKView {
 final class EffectRenderer: NSObject, MTKViewDelegate {
     private let frameDelegate: FrameOutputDelegate
     private let depthDelegate: DepthOutputDelegate
+    private let subjectMaskProvider: SubjectMaskProvider
 
     private let device: MTLDevice?
     private let ciContext: CIContext?
@@ -62,9 +68,14 @@ final class EffectRenderer: NSObject, MTKViewDelegate {
     var intensity: Float = 0
     var portraitBlurAmount: Float = 0
 
-    init(frameDelegate: FrameOutputDelegate, depthDelegate: DepthOutputDelegate) {
+    init(
+        frameDelegate: FrameOutputDelegate,
+        depthDelegate: DepthOutputDelegate,
+        subjectMaskProvider: SubjectMaskProvider
+    ) {
         self.frameDelegate = frameDelegate
         self.depthDelegate = depthDelegate
+        self.subjectMaskProvider = subjectMaskProvider
         if let device = MTLCreateSystemDefaultDevice() {
             self.device = device
             ciContext = CIContext(mtlDevice: device, options: [.useSoftwareRenderer: false])
@@ -129,7 +140,8 @@ final class EffectRenderer: NSObject, MTKViewDelegate {
                 to: processed,
                 disparity: depth.disparity.oriented(orientation),
                 range: depth.range,
-                blurAmount: portraitBlurAmount
+                blurAmount: portraitBlurAmount,
+                subjectMask: subjectMaskProvider.takeLatestMask()?.oriented(orientation)
             )
         }
         // Bloom is glare thrown by an already-defocused highlight, so it goes last.

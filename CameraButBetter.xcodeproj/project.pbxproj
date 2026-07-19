@@ -35,6 +35,7 @@
 		AA000000000000000000004B /* CameraOverlaysView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000004E /* CameraOverlaysView.swift */; };
 		AA00000000000000000000B0 /* BloomEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000B1 /* BloomEffect.swift */; };
 		AA0000000000000000000D00 /* DepthOutputDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000D01 /* DepthOutputDelegate.swift */; };
+		AA0000000000000000000D06 /* SubjectMaskProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000D07 /* SubjectMaskProvider.swift */; };
 		AA0000000000000000000D02 /* PortraitEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000D03 /* PortraitEffect.swift */; };
 		AA0000000000000000000D04 /* PortraitControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000D05 /* PortraitControlView.swift */; };
 		AA00000000000000000000B2 /* EffectPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000B3 /* EffectPreviewView.swift */; };
@@ -73,6 +74,7 @@
 		AA000000000000000000004E /* CameraOverlaysView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOverlaysView.swift; sourceTree = "<group>"; };
 		AA00000000000000000000B1 /* BloomEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BloomEffect.swift; sourceTree = "<group>"; };
 		AA0000000000000000000D01 /* DepthOutputDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthOutputDelegate.swift; sourceTree = "<group>"; };
+		AA0000000000000000000D07 /* SubjectMaskProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubjectMaskProvider.swift; sourceTree = "<group>"; };
 		AA0000000000000000000D03 /* PortraitEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortraitEffect.swift; sourceTree = "<group>"; };
 		AA0000000000000000000D05 /* PortraitControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortraitControlView.swift; sourceTree = "<group>"; };
 		AA00000000000000000000B3 /* EffectPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EffectPreviewView.swift; sourceTree = "<group>"; };
@@ -170,6 +172,7 @@
 				AA0000000000000000000018 /* PhotoCaptureDelegate.swift */,
 				AA0000000000000000000019 /* FrameOutputDelegate.swift */,
 				AA0000000000000000000D01 /* DepthOutputDelegate.swift */,
+				AA0000000000000000000D07 /* SubjectMaskProvider.swift */,
 				AA0000000000000000000D05 /* PortraitControlView.swift */,
 				AA000000000000000000004D /* MotionManager.swift */,
 				AA000000000000000000004E /* CameraOverlaysView.swift */,
@@ -308,6 +311,7 @@
 				AA000000000000000000004B /* CameraOverlaysView.swift in Sources */,
 				AA00000000000000000000B0 /* BloomEffect.swift in Sources */,
 				AA0000000000000000000D00 /* DepthOutputDelegate.swift in Sources */,
+				AA0000000000000000000D06 /* SubjectMaskProvider.swift in Sources */,
 				AA0000000000000000000D02 /* PortraitEffect.swift in Sources */,
 				AA0000000000000000000D04 /* PortraitControlView.swift in Sources */,
 				AA00000000000000000000B2 /* EffectPreviewView.swift in Sources */,
