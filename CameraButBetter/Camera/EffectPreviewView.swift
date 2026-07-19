@@ -136,12 +136,14 @@ final class EffectRenderer: NSObject, MTKViewDelegate {
             // The depth map takes the same orientation ingest applied to the colour frame,
             // which is what keeps the mask registered to the pixels it is masking.
             let orientation = lock.withLock { self.orientation }
+            let subjectMasks = [subjectMaskProvider.takeLatestMask()?.oriented(orientation)]
+                .compactMap { $0 }
             processed = PortraitEffect.apply(
                 to: processed,
                 disparity: depth.disparity.oriented(orientation),
                 range: depth.range,
                 blurAmount: portraitBlurAmount,
-                subjectMask: subjectMaskProvider.takeLatestMask()?.oriented(orientation)
+                subjectMasks: subjectMasks
             )
         }
         // Bloom is glare thrown by an already-defocused highlight, so it goes last.

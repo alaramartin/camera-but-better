@@ -66,15 +66,14 @@ enum Constants {
         static let buttonOpacity: Double = 0.55
         static let activeColor = Color(hex: "FFD60A")
 
-        // One fixed, Apple-style strength (0...1) instead of a manual aperture. It feeds both
-        // the preview radius and the capture aperture so the two cannot drift apart.
-        static let blurStrength: Float = 0.6
+        // One fixed, Apple-style strength (0...1) instead of a manual aperture. Preview and
+        // capture share one renderer, so this is the only strength knob.
+        static let blurStrength: Float = 0.35
 
-        // The live preview approximates the capture's CIDepthBlurEffect with a masked blur,
-        // so these two are a calibration pair: tune them together until preview matches capture.
-        static let previewRadiusFraction: Float = 0.02
-        static let previewMinRadius: Float = 2
-        static let coreImageApertureMax: Float = 22
+        // The radius scales with the image's longest side, so the preview buffer and the
+        // full-resolution capture get a visually matched blur.
+        static let blurRadiusFraction: Float = 0.02
+        static let blurMinRadius: Float = 2
 
         // Depth maps carry outlier pixels reading far nearer than anything real. Normalising
         // the mask against raw min/max lets one such pixel flatten every real value to "far",
@@ -83,7 +82,7 @@ enum Constants {
         static let disparityHistogramBins = 256
         static let disparityLowPercentile: Float = 0.02
         static let disparityHighPercentile: Float = 0.98
-        static let disparityRangeSmoothing: Float = 0.2
+        static let disparityRangeSmoothing: Float = 0.1
         // Below this the scene is effectively flat, and normalising would amplify sensor noise
         // into full-scale blur.
         static let minDisparitySpan: Float = 0.02
@@ -103,6 +102,18 @@ enum Constants {
         // subject (sharp for erosion, blurred for softening).
         static let maskErosionDepthPixels: Float = 0.5
         static let maskSofteningDepthPixels: Float = 0.25
+
+        // A lifted "subject" covering most of the frame is a segmentation failure, and
+        // zeroing the blur under it would erase the effect — the exact silent failure the
+        // old capture composite had. Such masks are rejected in favour of depth-only.
+        static let subjectMaskMaxCoverage: Float = 0.6
+        // Vision's instance list flaps frame to frame, and rendering each flap instantly is
+        // what made background objects flick between blurred and clear. New masks blend into
+        // an accumulator at this rate; a no-subject result decays it instead of clearing it.
+        static let subjectMaskSmoothing: Float = 0.5
+        // Fraction of image width: feathers the forced-sharp region so it antialiases into
+        // the blur instead of a hard cutout, at matched width in preview and capture.
+        static let subjectMaskFeatherFraction: Float = 0.001
     }
 
     enum Overlay {
