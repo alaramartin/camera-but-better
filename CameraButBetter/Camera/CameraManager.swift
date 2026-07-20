@@ -27,6 +27,7 @@ final class CameraManager: NSObject, ObservableObject {
     private var displayMultiplier: CGFloat = 1.0
     private var wideStartFactor: CGFloat = 1.0
     private var zoomGlideTimer: Timer?
+    private var zoomAnimationTimer: Timer?
 
     private var fusedDevice: AVCaptureDevice?
     // Portrait runs on its own device: the wide+tele pair only overlaps within the tele's
@@ -680,7 +681,28 @@ final class CameraManager: NSObject, ObservableObject {
     func cancelZoomGlide() {
         zoomGlideTimer?.invalidate()
         zoomGlideTimer = nil
+        zoomAnimationTimer?.invalidate()
+        zoomAnimationTimer = nil
         isZoomGliding = false
+    }
+
+    func animateZoom(to displayZoom: CGFloat) {
+        cancelZoomGlide()
+        let target = displayZoom.clamped(to: minZoom...maxZoom)
+        let start = currentZoom
+        guard abs(target - start) > 0.001 else { applyZoom(target); return }
+        let duration = Constants.Zoom.bookmarkAnimationDuration
+        let startTime = CACurrentMediaTime()
+        zoomAnimationTimer = Timer.scheduledTimer(withTimeInterval: Constants.Zoom.momentumFrameInterval, repeats: true) { [weak self] timer in
+            guard let self else { timer.invalidate(); return }
+            let progress = min(1, (CACurrentMediaTime() - startTime) / duration)
+            let eased = progress < 0.5 ? 2 * progress * progress : 1 - pow(-2 * progress + 2, 2) / 2
+            self.applyZoom(start + (target - start) * CGFloat(eased))
+            if progress >= 1 {
+                timer.invalidate()
+                self.zoomAnimationTimer = nil
+            }
+        }
     }
 
     func startZoomGlide(initialVelocity: CGFloat) {

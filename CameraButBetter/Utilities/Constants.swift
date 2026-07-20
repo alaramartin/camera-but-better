@@ -58,6 +58,27 @@ enum Constants {
         static let edgeFadeFraction: Double = 0.08
         static let lineColor = Color.white
         static let tickColor = Color.white
+        static let bookmarks: [CGFloat] = [1, 2, 5]
+        static let bookmarkAnimationDuration: Double = 0.25
+        static let expandHoldDuration: Double = 0.3
+        static let tapMoveSlop: CGFloat = 10
+        static let bookmarkFontSize: CGFloat = 13
+        static let bookmarkActiveOpacity: Double = 1.0
+        static let bookmarkInactiveOpacity: Double = 0.5
+        static let bookmarkEvenSpacing: CGFloat = 26
+        static let collapsedFadeTail: CGFloat = 20
+        static let collapsedRowHeight: CGFloat = 40
+        static let dragExpandDuration: Double = 0.12
+        static let collapsedMinorPerGap: Int = 3
+        static let collapsedMajorTickHeight: CGFloat = 9
+        static let collapsedMinorTickHeight: CGFloat = 5
+        static let pressRevealMinorTickHeight: CGFloat = 8
+        static let pressRevealMajorTickHeight: CGFloat = 14
+        static let pressRevealScale: CGFloat = 1.06
+        static let markerRadius: CGFloat = 3
+        static let hintPlayCount: Int = 3
+        static let hintExpandDelay: Double = 0.6
+        static let hintHoldDuration: Double = 1.1
     }
 
     enum Portrait {
